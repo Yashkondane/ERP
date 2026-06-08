@@ -22,9 +22,9 @@ export function SizeBreakdownRow({ index }: SizeBreakdownProps) {
   }
 
   return (
-    <div className="flex items-center gap-1 flex-wrap justify-center">
+    <div className="grid grid-cols-5 gap-1 mx-auto w-fit">
       {activeSizes.map(({ size, qty }) => (
-        <div key={size} className="flex flex-col items-center border border-slate-200 rounded overflow-hidden min-w-[28px]">
+        <div key={size} className="flex flex-col items-center border border-slate-200 rounded overflow-hidden min-w-[28px] w-full">
           <div className="text-[10px] bg-slate-50 w-full text-center py-0.5 font-medium text-slate-600 border-b border-slate-200 px-1 leading-tight">
             {size}
           </div>

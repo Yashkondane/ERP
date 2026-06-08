@@ -64,8 +64,8 @@ export function BuyerOrderDetailsCard({
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="flex flex-col gap-2 md:col-span-1">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div className="flex flex-col gap-2 md:col-span-4 min-w-0 w-full">
           <Label htmlFor="buyerId" className="text-xs text-slate-500 font-medium">Buyer {!effectivelyReadOnly && <span className="text-red-500">*</span>}</Label>
           {effectivelyReadOnly ? (
             <div className="text-sm font-semibold text-slate-900 mt-1">{selectedBuyer?.name || "-"}</div>
@@ -75,8 +75,8 @@ export function BuyerOrderDetailsCard({
               name="buyerId"
               render={({ field }) => (
                 <Select value={field.value || undefined} onValueChange={field.onChange}>
-                  <SelectTrigger id="buyerId" className="h-[42px]">
-                    <SelectValue placeholder="Select Buyer" />
+                  <SelectTrigger id="buyerId" className="w-full h-[42px]">
+                    <SelectValue className="truncate" placeholder="Select Buyer" />
                   </SelectTrigger>
                   <SelectContent>
                     {MOCK_BUYERS.map(buyer => (
@@ -95,34 +95,34 @@ export function BuyerOrderDetailsCard({
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 md:col-span-3 w-full">
           <Label htmlFor="buyerPoNo" className="text-xs text-slate-500 font-medium">Buyer PO No. {!effectivelyReadOnly && <span className="text-red-500">*</span>}</Label>
           {effectivelyReadOnly ? (
             <div className="text-sm font-semibold text-slate-900 mt-1">{watch("buyerPoNo") || "-"}</div>
           ) : (
-            <Input id="buyerPoNo" {...register("buyerPoNo")} className="h-[42px]" />
+            <Input id="buyerPoNo" {...register("buyerPoNo")} className="h-[42px] w-full" />
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 md:col-span-2 w-full">
           <Label htmlFor="poDate" className="text-xs text-slate-500 font-medium">PO Date {!effectivelyReadOnly && <span className="text-red-500">*</span>}</Label>
           {effectivelyReadOnly ? (
             <div className="text-sm font-semibold text-slate-900 mt-1">
               {poDate ? format(new Date(poDate), "dd MMM yyyy") : "-"}
             </div>
           ) : (
-            <Input id="poDate" type="date" className="h-[42px] text-sm" value={poDate ? format(new Date(poDate), "yyyy-MM-dd") : ''} onChange={(e) => setValue("poDate", new Date(e.target.value))} />
+            <Input id="poDate" type="date" className="h-[42px] text-sm w-full" value={poDate ? format(new Date(poDate), "yyyy-MM-dd") : ''} onChange={(e) => setValue("poDate", new Date(e.target.value))} />
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 md:col-span-3 w-full">
           <Label htmlFor="deliveryDate" className="text-xs text-slate-500 font-medium">Delivery Date {!effectivelyReadOnly && <span className="text-red-500">*</span>}</Label>
           {effectivelyReadOnly ? (
             <div className="text-sm font-semibold text-slate-900 mt-1">
               {deliveryDate ? format(new Date(deliveryDate), "dd MMM yyyy") : "-"}
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full">
               <Select value={diffDays || undefined} onValueChange={(val) => {
                 const days = parseInt(val);
                 const currentPoDate = getValues("poDate");

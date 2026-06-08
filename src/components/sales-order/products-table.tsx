@@ -43,14 +43,15 @@ export function ProductsTable({ isReadOnly = false }: { isReadOnly?: boolean }) 
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow>
-              <TableHead className="w-14 text-center px-2">SO</TableHead>
               <TableHead className="w-10 text-center px-2">#</TableHead>
               <TableHead className="px-2">Product</TableHead>
-              <TableHead className="w-[130px] px-2">Brand Name</TableHead>
+              <TableHead className="w-[140px] pl-6 pr-2">Brand &bull; SKU</TableHead>
               <TableHead className="w-[110px] pl-6 pr-2">Color</TableHead>
+              <TableHead className="w-[110px] px-2">Fabric</TableHead>
+              <TableHead className="w-[130px] px-2">Fit</TableHead>
               <TableHead className="w-[280px] text-center px-2">Size Breakup (Qty)</TableHead>
               <TableHead className="w-[80px] text-center px-2">Total Qty</TableHead>
-              <TableHead className="w-[100px] text-right px-2">Rate (₹)</TableHead>
+              <TableHead className="w-[100px] text-center px-2">Rate (₹)</TableHead>
               <TableHead className="w-[130px] text-right pr-6 pl-2">Amount (₹)</TableHead>
               {!isReadOnly && <TableHead className="w-[80px] text-center px-2">Action</TableHead>}
             </TableRow>
@@ -64,7 +65,6 @@ export function ProductsTable({ isReadOnly = false }: { isReadOnly?: boolean }) 
 
               return (
                 <TableRow key={field.id}>
-                  <TableCell className="text-center text-sm font-semibold text-slate-900 px-2 py-2">{`SO${index + 1}`}</TableCell>
                   <TableCell className="text-center text-sm font-medium text-slate-600 px-2 py-2">{index + 1}</TableCell>
                   <TableCell className="px-2 py-2">
                     <div className="flex items-center gap-3">
@@ -72,24 +72,31 @@ export function ProductsTable({ isReadOnly = false }: { isReadOnly?: boolean }) 
                         {/* Placeholder for product image */}
                         <ImageIcon className="w-5 h-5 text-slate-400" />
                       </div>
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-0.5">
                         <span className="text-sm font-semibold text-slate-800">{product.name}</span>
-                        <span className="text-[11px] text-slate-500 mt-0.5">
-                          {product.category || "Unknown"} &bull; {product.subcategory || "Unknown"} &bull; {product.type || "Unknown"}
+                        <span className="text-[11px] text-slate-500">
+                          {product.type || "Unknown"} {product.subcategory === "T-Shirt" || product.name.toLowerCase().includes("t-shirt") ? "Round Neck" : "Regular Collar"}
                         </span>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="px-2 py-2">
-                    {isReadOnly ? (
-                      <span className="text-sm font-medium text-slate-700">{product.brandName || "No Brand"}</span>
-                    ) : (
-                      <Input
-                        {...register(`products.${index}.brandName`)}
-                        placeholder="No Brand"
-                        className="h-8 w-[112px] rounded-none border-0 bg-transparent px-0 text-sm font-medium shadow-none focus-visible:border-0 focus-visible:ring-0"
-                      />
-                    )}
+                  <TableCell className="pl-6 pr-2 py-2">
+                    <div className="flex flex-col gap-0.5">
+                      {isReadOnly ? (
+                        <span className="text-sm font-medium text-slate-700">{product.brandName || "No Brand"}</span>
+                      ) : (
+                        <Input
+                          {...register(`products.${index}.brandName`)}
+                          placeholder="No Brand"
+                          className="h-8 w-[112px] rounded-none border-0 bg-transparent px-0 text-sm font-medium shadow-none focus-visible:border-0 focus-visible:ring-0"
+                        />
+                      )}
+                      {product.sqNumber && (
+                        <span className="text-[11px] font-semibold text-slate-500">
+                          {product.sqNumber}
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="pl-6 pr-2 py-2">
                     <div className="flex items-center gap-2">
@@ -100,12 +107,28 @@ export function ProductsTable({ isReadOnly = false }: { isReadOnly?: boolean }) 
                       <span className="text-sm text-slate-700">{product.color}</span>
                     </div>
                   </TableCell>
+                  <TableCell className="px-2 py-2">
+                    <span className="text-sm font-medium text-slate-700">{product.fabric || "Cotton Poplin"}</span>
+                  </TableCell>
+                  <TableCell className="px-2 py-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-medium text-slate-700">{product.fit || "Regular"}</span>
+                      {product.pattern && (
+                        <div className="text-[11px] text-slate-500">
+                          <span className="font-semibold text-slate-800">{product.pattern.code}</span> {product.pattern.brand} - {product.pattern.fit}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="flex justify-center px-2 py-2">
                     <SizeBreakdownRow index={index} />
                   </TableCell>
                   <TableCell className="text-center font-semibold text-slate-800 px-2 py-2">
                     {isReadOnly ? (
-                      <div className="mx-auto flex h-[30px] w-[64px] items-center justify-center rounded-md border border-blue-100 bg-blue-50 text-sm font-semibold text-slate-900">
+                      <div 
+                        className="mx-auto flex h-[30px] w-[64px] items-center justify-center rounded-md border border-blue-100 bg-blue-50 text-sm font-semibold text-slate-900 cursor-pointer hover:bg-blue-100 transition-colors"
+                        onClick={() => handleEdit(index)}
+                      >
                         {totalQty}
                       </div>
                     ) : (
@@ -121,7 +144,7 @@ export function ProductsTable({ isReadOnly = false }: { isReadOnly?: boolean }) 
                       </button>
                     )}
                   </TableCell>
-                  <TableCell className="text-right px-2 py-2">
+                  <TableCell className="text-center px-2 py-2">
                     <span className="text-sm font-medium text-slate-800">{product.rate}</span>
                   </TableCell>
                   <TableCell className="text-right font-semibold text-slate-800 pr-6 pl-2 py-2">

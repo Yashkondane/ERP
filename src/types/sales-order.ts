@@ -26,6 +26,9 @@ export const ProductLineItemSchema = z.object({
   brandName: z.string().optional(),
   sqNumber: z.string().optional(),
   color: z.string(),
+  fabric: z.string().optional(),
+  fit: z.string().optional(),
+  pattern: z.any().optional(), // Allow an object for pattern details
   sizeBreakdown: SizeBreakdownSchema,
   rate: z.number().min(0),
 });

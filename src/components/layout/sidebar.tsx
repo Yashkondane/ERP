@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { FileText, ChevronDown, PlusSquare, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { FileText, ChevronDown, PlusSquare, ChevronLeft, ChevronRight, Users, Database } from "lucide-react";
 import Link from "next/link";
 
 export function Sidebar() {
@@ -13,6 +13,7 @@ export function Sidebar() {
   const isFabricActive = pathname.startsWith("/fabric-purchases");
   const isTrimsActive = pathname.startsWith("/trims-purchases");
   const isSuppliersActive = pathname.startsWith("/suppliers");
+  const isMastersActive = pathname.startsWith("/masters");
 
   return (
     <div className={`relative ${isExpanded ? "w-64" : "w-[72px]"} bg-[#0453B8] h-screen flex flex-col transition-all duration-300 ease-in-out shrink-0 z-50`}>
@@ -95,6 +96,24 @@ export function Sidebar() {
             >
               <Users className="w-5 h-5 shrink-0" />
               {isExpanded && <span className="truncate">Suppliers</span>}
+            </Link>
+          </div>
+
+          {/* Masters Link */}
+          <div className="relative">
+            {isMastersActive && (
+              <div className={`absolute ${isExpanded ? "left-[-16px]" : "left-[-8px]"} top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-300 rounded-r-md shadow-[0_0_12px_rgba(147,197,253,0.8)]`} />
+            )}
+            <Link
+              href="/masters"
+              className={`flex items-center ${isExpanded ? "gap-3 px-3" : "justify-center px-0"} py-2.5 text-sm font-medium rounded-md transition-colors ${
+                isMastersActive
+                  ? "text-white bg-white/10"
+                  : "text-white/80 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <Database className="w-5 h-5 shrink-0" />
+              {isExpanded && <span className="truncate">Masters</span>}
             </Link>
           </div>
         </nav>

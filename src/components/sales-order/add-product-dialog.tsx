@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Search, ChevronDown, ChevronUp, Plus, ArrowLeft } from "lucide-react";
 import { MOCK_CATALOG_PRODUCTS } from "@/data/mock-sales-order";
+import { INITIAL_MASTER_PATTERNS } from "@/data/mock-masters";
 import { CatalogProduct } from "@/types/sales-order";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface AddProductDialogProps {
   open: boolean;
@@ -18,30 +20,37 @@ interface AddProductDialogProps {
 
 const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL"] as const;
 const EXTENDED_SIZES = ["XXL", "3XL", "4XL", "5XL", "6XL"] as const;
-const AUDIENCE_FILTERS = ["Men", "Women", "Kids"] as const;
+const AUDIENCE_FILTERS = ["Men's Shirt", "Men's T-Shirt", "Women's Shirt", "Women's T-Shirt", "Kids' Wear"] as const;
 type AudienceFilter = typeof AUDIENCE_FILTERS[number];
 const BRAND_BADGES = ["Zara", "H&M", "Uniqlo", "Levi's"] as const;
 
 // Hardcoded Master Values
-const MASTER_CATEGORIES = ["Men", "Women", "Kids"];
+const MASTER_CATEGORIES = ["Men's Shirt", "Men's T-Shirt", "Women's Shirt", "Women's T-Shirt", "Kids' Wear"];
 const MASTER_SUBCATEGORIES = ["T-Shirt", "Shirt", "Hoodie", "Dress", "Trouser", "Skirt", "Top", "Shorts", "Jacket"];
 const MASTER_TYPES = ["Half Sleeves", "Full Sleeves", "Sleeveless", "Full Length", "Knee Length"];
+const MASTER_TYPE2S = ["Regular Collar", "Casual Collar", "Round Neck", "V-Neck", "Polo"];
 
 export function AddProductDialog({ open, onOpenChange, onAddProduct, editProduct }: AddProductDialogProps) {
   const [catalogItems, setCatalogItems] = useState<CatalogProduct[]>(MOCK_CATALOG_PRODUCTS);
   const [viewMode, setViewMode] = useState<'search' | 'create'>('search');
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeAudience, setActiveAudience] = useState<AudienceFilter>("Men");
+  const [activeAudience, setActiveAudience] = useState<AudienceFilter>("Men's Shirt");
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
 
   const [showMoreSizes, setShowMoreSizes] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [selectedColor, setSelectedColor] = useState("White");
+  const [selectedFabric, setSelectedFabric] = useState("Cotton Poplin");
+  const [selectedFit, setSelectedFit] = useState("Regular");
   const [customRate, setCustomRate] = useState<string>("");
   const [sqNumber, setSqNumber] = useState("");
   const [brandName, setBrandName] = useState("");
+  const [selectedPattern, setSelectedPattern] = useState("");
+  const [patternSearch, setPatternSearch] = useState("");
+  const [isPatternOpen, setIsPatternOpen] = useState(false);
+  const [customImage, setCustomImage] = useState<string | null>(null);
 
   const [newProduct, setNewProduct] = useState({
     code: "",
@@ -49,7 +58,8 @@ export function AddProductDialog({ open, onOpenChange, onAddProduct, editProduct
     category: "",
     subcategory: "",
     name: "",
-    type: ""
+    type: "",
+    type2: ""
   });
 
   const rateInputRef = useRef<HTMLInputElement>(null);
@@ -81,6 +91,7 @@ export function AddProductDialog({ open, onOpenChange, onAddProduct, editProduct
       setBrandName("");
       setShowMoreSizes(false);
       setViewMode('search');
+      setCustomImage(null);
     }
   }, [open, editProduct, catalogItems]);
 
@@ -156,6 +167,9 @@ export function AddProductDialog({ open, onOpenChange, onAddProduct, editProduct
       brandName,
       sqNumber,
       color: selectedColor,
+      fabric: selectedFabric,
+      fit: selectedFit,
+      pattern: INITIAL_MASTER_PATTERNS.find(p => p.code === selectedPattern) || null,
       rate: parseFloat(customRate) || 0,
       sizeBreakdown: sizeBreakdown,
     };
@@ -195,16 +209,19 @@ export function AddProductDialog({ open, onOpenChange, onAddProduct, editProduct
     setQuantities({});
     setShowMoreSizes(false);
     setSelectedColor("White");
+    setSelectedFabric("Cotton Poplin");
+    setSelectedFit("Regular");
     setSqNumber("");
     setBrandName("");
+    setSelectedPattern("");
     setViewMode('search');
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[820px] h-[860px] bg-slate-50 p-0 overflow-hidden flex flex-col shadow-2xl border-0">
-        <DialogHeader className="px-6 py-4 border-b border-slate-200 bg-white shadow-sm z-10 flex-shrink-0">
+      <DialogContent className="sm:max-w-[820px] h-[90vh] bg-slate-50 p-0 overflow-hidden flex flex-col shadow-2xl border-0">
+        <DialogHeader className="px-6 py-3 border-b border-slate-200 bg-white shadow-sm z-10 flex-shrink-0">
           <div className="flex items-center gap-3">
             {viewMode === 'create' && (
               <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2 text-slate-500" onClick={() => setViewMode('search')}>
@@ -223,10 +240,10 @@ export function AddProductDialog({ open, onOpenChange, onAddProduct, editProduct
         </DialogHeader>
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar relative">
+        <div className="flex-1 overflow-y-auto px-6 pt-3 pb-4 custom-scrollbar relative">
 
           {viewMode === 'search' && (
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4">
 
               {/* Search Section - Fixed height container so it doesn't jump */}
               <div className="flex flex-col gap-3 min-h-[70px]">
@@ -259,177 +276,229 @@ export function AddProductDialog({ open, onOpenChange, onAddProduct, editProduct
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
-                      setIsProductDropdownOpen(true);
-                      setSelectedProductId(null); // Reset selection when searching
+                      setSelectedProductId(null);
                     }}
-                    onFocus={() => setIsProductDropdownOpen(true)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && searchQuery && filteredProducts.length > 0 && !selectedProduct) {
                         e.preventDefault();
                         setSelectedProductId(filteredProducts[0].id);
                         setSearchQuery("");
-                        setIsProductDropdownOpen(false);
-                      }
-                      if (e.key === 'Escape') {
-                        setIsProductDropdownOpen(false);
                       }
                     }}
                   />
                 </div>
 
-                {!selectedProduct && isProductDropdownOpen && (
-                  <div className="absolute top-[135px] left-6 right-6 border border-slate-200 rounded-md max-h-[280px] overflow-y-auto bg-white shadow-lg z-20">
-                    {visibleProducts.length === 0 ? (
-                      <div className="p-4 flex flex-col items-center justify-center text-center gap-3">
-                        <span className="text-sm text-slate-500">No products found for "{searchQuery}"</span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-[#0453B8] text-[#0453B8] hover:bg-blue-50"
-                          onClick={() => {
-                            setNewProduct(prev => ({ ...prev, code: searchQuery.toUpperCase() }));
-                            setViewMode('create');
-                          }}
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Create "{searchQuery}" in Catalog
-                        </Button>
-                      </div>
-                    ) : (
-                      visibleProducts.map(p => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          className="flex w-full items-center justify-between gap-3 border-b border-slate-100 p-3 text-left transition-colors last:border-0 hover:bg-blue-50"
-                          onClick={() => {
-                            setSelectedProductId(p.id);
-                            setIsProductDropdownOpen(false);
-                            setSearchQuery(""); // Clear search to hide dropdown
-                          }}
-                        >
-                          <div className="flex min-w-0 items-center gap-3">
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-100 text-sm font-bold text-slate-900">
-                              {p.code}
-                            </span>
-                            <span className="flex min-w-0 flex-col">
-                              <span className="truncate text-sm font-bold text-slate-800">{p.name}</span>
-                              <span className="truncate text-xs text-slate-500">{p.category} &gt; {p.subcategory} &gt; {p.type}</span>
-                            </span>
-                          </div>
-                          <span className="text-sm font-semibold text-[#0453B8]">₹{p.rate}</span>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                )}
               </div>
 
               {/* Product Selection Area */}
               {!selectedProduct ? (
-                <div className="flex flex-col min-h-[400px] border border-dashed border-slate-300 rounded-xl bg-white p-6 justify-center items-center relative overflow-hidden">
-                  <div className="flex flex-col items-center text-center max-w-[280px]">
-                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                      <Search className="w-8 h-8 text-slate-300" />
-                    </div>
-                    <h3 className="text-slate-700 font-semibold mb-1">No Product Selected</h3>
-                    <p className="text-xs text-slate-500 mb-6">Search the catalog above to select a product and enter quantities.</p>
-
-                    <div className="flex items-center gap-3 w-full">
-                      <div className="h-px bg-slate-200 flex-1"></div>
-                      <span className="text-xs text-slate-400 font-medium">OR</span>
-                      <div className="h-px bg-slate-200 flex-1"></div>
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      className="mt-4 text-[#0453B8] hover:bg-blue-50 hover:text-blue-700 font-semibold"
-                      onClick={() => setViewMode('create')}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create New Product
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="border border-slate-200 rounded-xl bg-white p-6 flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-200">
-                  {/* Selected Product Card */}
-                    <div className="bg-[#0453B8]/5 border border-[#0453B8]/20 rounded-lg p-4 flex items-start justify-between gap-4 shadow-sm">
-                      <div className="flex min-w-0 flex-col gap-3">
-                        <span className="text-base font-semibold text-slate-900">{selectedProduct.name}</span>
-                        <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
-                          <span className="bg-white px-2 py-0.5 rounded-sm border border-slate-200">{selectedProduct.category}</span>
-                          <span className="bg-white px-2 py-0.5 rounded-sm border border-slate-200">{selectedProduct.subcategory}</span>
-                          <span className="bg-white px-2 py-0.5 rounded-sm border border-slate-200">{selectedProduct.type}</span>
-                        </div>
-                        <div className="flex h-8 w-fit items-center gap-1.5 rounded-sm border border-slate-200 bg-white px-2 shadow-sm">
-                          <span className="text-[10px] font-bold uppercase text-slate-500">SQ No.</span>
-                          <Input
-                            value={sqNumber}
-                            maxLength={10}
-                            inputMode="numeric"
-                            placeholder="0000000000"
-                            className="h-6 w-[92px] rounded-none border-0 bg-transparent p-0 text-sm font-bold text-slate-900 shadow-none focus-visible:ring-0"
-                            onChange={(e) => setSqNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                          />
-                        </div>
+                <div className="mt-4">
+                  {visibleProducts.length === 0 ? (
+                    <div className="flex flex-col min-h-[300px] border border-dashed border-slate-300 rounded-xl bg-white p-6 justify-center items-center">
+                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                        <Search className="w-8 h-8 text-slate-300" />
                       </div>
-                      <div className="flex shrink-0 flex-col items-end gap-3">
-                        <div className="flex h-8 items-center gap-1.5 rounded-md border border-blue-100 bg-white px-2 shadow-sm">
-                          <span className="text-sm font-bold text-[#0453B8]">₹</span>
-                          <Input
-                            ref={rateInputRef}
-                            type="number"
-                            className="h-7 w-[58px] rounded-none border-0 bg-transparent p-0 text-right text-sm font-bold text-[#0453B8] shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            value={customRate}
-                            onChange={(e) => setCustomRate(e.target.value)}
-                            onFocus={(e) => e.target.select()}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const firstSizeInput = document.getElementById(`size-input-${DEFAULT_SIZES[0]}`);
-                                if (firstSizeInput) {
-                                  firstSizeInput.focus();
-                                  (firstSizeInput as HTMLInputElement).select();
-                                }
-                              }
-                            }}
-                          />
-                        </div>
-                        <Select value={selectedColor} onValueChange={setSelectedColor}>
-                          <SelectTrigger className="h-8 bg-white border-slate-200 shadow-sm rounded-md w-[100px] text-xs font-bold text-slate-700">
-                            <SelectValue placeholder="Color" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="White">White</SelectItem>
-                            <SelectItem value="Black">Black</SelectItem>
-                            <SelectItem value="Navy">Navy</SelectItem>
-                            <SelectItem value="Red">Red</SelectItem>
-                            <SelectItem value="Grey">Grey</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <h3 className="text-slate-700 font-semibold mb-1">No products found</h3>
+                      <p className="text-xs text-slate-500 mb-6">Try adjusting your search or create a new product.</p>
+                      <Button
+                        variant="ghost"
+                        className="text-[#0453B8] hover:bg-blue-50 hover:text-blue-700 font-semibold"
+                        onClick={() => {
+                          setNewProduct(prev => ({ ...prev, code: searchQuery.toUpperCase() }));
+                          setViewMode('create');
+                        }}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create "{searchQuery}"
+                      </Button>
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="mr-1 text-[10px] font-bold uppercase text-slate-500">Brand</span>
-                      {BRAND_BADGES.map(brand => {
-                        const isSelected = brandName === brand;
-
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                      {visibleProducts.map(p => {
+                        let imageSrc = "/men casual half shirt.jpg";
+                        const nameLower = p.name.toLowerCase();
+                        if (nameLower.includes("formal") || p.code.startsWith("MS")) {
+                          imageSrc = p.type.toLowerCase().includes("full") ? "/mens casual full sleeve shirt.jpg" : "/men regualr fit shirt.jpeg";
+                        }
+                        if (nameLower.includes("t-shirt") || p.code.startsWith("MT")) {
+                          imageSrc = "/men casual tshirt.jpeg";
+                        }
+                        
                         return (
                           <button
-                            key={brand}
+                            key={p.id}
                             type="button"
-                            className={`h-8 rounded-md border px-3 text-xs font-bold transition-colors ${isSelected
-                              ? "border-[#0453B8] bg-[#0453B8] text-white shadow-sm"
-                              : "border-blue-100 bg-blue-50 text-[#0453B8] hover:border-[#0453B8] hover:bg-blue-100"
-                              }`}
-                            onClick={() => setBrandName(isSelected ? "" : brand)}
+                            onClick={() => setSelectedProductId(p.id)}
+                            className="flex flex-col text-left border border-slate-200 rounded-xl bg-white p-3 shadow-sm hover:border-[#0453B8] hover:shadow-md transition-all group"
                           >
-                            {brand}
+                            <div className="w-full aspect-[4/5] bg-[#F5F6F8] rounded-lg overflow-hidden mb-3 p-2 flex items-center justify-center relative">
+                              <img src={imageSrc} alt={p.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300" />
+                            </div>
+                            <span className="text-[13px] font-extrabold text-slate-900 mb-0.5">{p.code}</span>
+                            <span className="text-xs font-semibold text-slate-700 mb-1 truncate w-full">{p.name}</span>
+                            <span className="text-[10px] text-slate-500">{p.type}</span>
+                            <span className="text-[10px] text-slate-500">{p.subcategory === "T-Shirt" ? "Round Neck" : "Regular Collar"}</span>
                           </button>
                         );
                       })}
                     </div>
+                  )}
+                </div>
+              ) : (
+                <div className="border border-slate-200 rounded-xl bg-white p-4 flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-200">
+                  {/* Selected Product Card */}
+                  <div className="border border-slate-200 rounded-xl p-4 flex items-start gap-5 shadow-sm bg-white">
+                    {(() => {
+                      let imageSrc = "/men casual half shirt.jpg";
+                      const nameLower = selectedProduct.name.toLowerCase();
+                      if (nameLower.includes("formal") || selectedProduct.code.startsWith("MS")) {
+                        imageSrc = selectedProduct.type.toLowerCase().includes("full") ? "/mens casual full sleeve shirt.jpg" : "/men regualr fit shirt.jpeg";
+                      }
+                      if (nameLower.includes("t-shirt") || selectedProduct.code.startsWith("MT")) {
+                        imageSrc = "/men casual tshirt.jpeg";
+                      }
+
+                      return (
+                        <>
+                          <div className="relative w-[100px] aspect-square bg-[#F5F6F8] rounded-xl overflow-hidden flex items-center justify-center p-2 shrink-0 group cursor-pointer border border-transparent hover:border-[#0453B8] transition-colors">
+                            <img src={customImage || imageSrc} alt={selectedProduct.name} className="w-full h-full object-contain mix-blend-multiply group-hover:opacity-30 transition-opacity" />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/5">
+                              <Plus className="w-6 h-6 text-[#0453B8] mb-1" />
+                              <span className="text-[10px] font-bold text-[#0453B8] text-center px-1 leading-tight">Change<br/>Image</span>
+                            </div>
+                            <input 
+                              type="file" 
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                              accept="image/*"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  const url = URL.createObjectURL(e.target.files[0]);
+                                  setCustomImage(url);
+                                }
+                              }}
+                            />
+                          </div>
+                          <div className="flex flex-col gap-2 pt-1">
+                            <span className="text-base font-extrabold text-slate-900">{selectedProduct.code}</span>
+                            <span className="text-sm font-semibold text-slate-700">{selectedProduct.name} {selectedProduct.type} {selectedProduct.subcategory === "T-Shirt" ? "Round Neck" : "Regular Collar"}</span>
+                            
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                              <span className="bg-blue-50 text-[#0453B8] font-bold px-3 py-1.5 rounded-md text-xs">{selectedProduct.category.replace("'s", "").replace(" Wear", "")}</span>
+                              <span className="bg-blue-50 text-[#0453B8] font-bold px-3 py-1.5 rounded-md text-xs">{selectedProduct.subcategory}</span>
+                              <span className="bg-blue-50 text-[#0453B8] font-bold px-3 py-1.5 rounded-md text-xs">{selectedProduct.type}</span>
+                              <span className="bg-blue-50 text-[#0453B8] font-bold px-3 py-1.5 rounded-md text-xs">{selectedProduct.subcategory === "T-Shirt" ? "Round Neck" : "Regular Collar"}</span>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Attributes Section */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mt-2 mb-2">
+                    <div className="flex items-center gap-3">
+                      <Label className="text-xs font-bold text-slate-700 min-w-[45px]">Color <span className="text-red-500">*</span></Label>
+                      <Select value={selectedColor} onValueChange={setSelectedColor}>
+                        <SelectTrigger className="h-10 flex-1 bg-white border-slate-200 shadow-sm rounded-lg text-sm font-semibold">
+                          <SelectValue placeholder="Select Color" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="White">White</SelectItem>
+                          <SelectItem value="Black">Black</SelectItem>
+                          <SelectItem value="Navy">Navy</SelectItem>
+                          <SelectItem value="Red">Red</SelectItem>
+                          <SelectItem value="Grey">Grey</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Label className="text-xs font-bold text-slate-700 min-w-[45px]">Fabric <span className="text-red-500">*</span></Label>
+                      <Select value={selectedFabric} onValueChange={setSelectedFabric}>
+                        <SelectTrigger className="h-10 flex-1 bg-white border-slate-200 shadow-sm rounded-lg text-sm font-semibold">
+                          <SelectValue placeholder="Select Fabric" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Cotton Poplin">Cotton Poplin</SelectItem>
+                          <SelectItem value="Linen">Linen</SelectItem>
+                          <SelectItem value="Denim">Denim</SelectItem>
+                          <SelectItem value="Polyester">Polyester</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Label className="text-xs font-bold text-slate-700 min-w-[45px]">Fit <span className="text-red-500">*</span></Label>
+                      <Select value={selectedFit} onValueChange={setSelectedFit}>
+                        <SelectTrigger className="h-10 flex-1 bg-white border-slate-200 shadow-sm rounded-lg text-sm font-semibold">
+                          <SelectValue placeholder="Select Fit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Regular">Regular</SelectItem>
+                          <SelectItem value="Slim Fit">Slim Fit</SelectItem>
+                          <SelectItem value="Oversized">Oversized</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Label className="text-xs font-bold text-slate-700 min-w-[45px]">Pattern <span className="text-red-500">*</span></Label>
+                      <Popover open={isPatternOpen} onOpenChange={setIsPatternOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" role="combobox" aria-expanded={isPatternOpen} className="h-10 flex-1 justify-between bg-white border-slate-200 shadow-sm rounded-lg text-sm font-semibold text-slate-700 px-3">
+                            {selectedPattern ? selectedPattern : "Pattern"}
+                            <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[300px] p-0" align="start">
+                          <div className="flex flex-col">
+                            <div className="flex items-center border-b px-3">
+                              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50 text-slate-400" />
+                              <Input 
+                                placeholder="Search brand or code..." 
+                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none border-0 focus-visible:ring-0 shadow-none placeholder:text-slate-500 font-medium px-0"
+                                value={patternSearch}
+                                onChange={(e) => setPatternSearch(e.target.value)}
+                              />
+                            </div>
+                            <div className="max-h-[300px] overflow-y-auto py-2">
+                              {INITIAL_MASTER_PATTERNS.filter(p => p.brand.toLowerCase().includes(patternSearch.toLowerCase()) || p.code.toLowerCase().includes(patternSearch.toLowerCase())).map(pattern => (
+                                <button
+                                  key={pattern.code}
+                                  className="w-full text-left px-4 py-2 hover:bg-slate-50 focus:bg-slate-50 outline-none flex flex-col transition-colors border-l-2 border-transparent hover:border-[#0453B8]"
+                                  onClick={() => {
+                                    setSelectedPattern(pattern.code);
+                                    setIsPatternOpen(false);
+                                  }}
+                                >
+                                  <div className="flex items-center justify-between w-full">
+                                    <span className="font-bold text-[13px] text-slate-900">{pattern.code}</span>
+                                    <span className="font-semibold text-[11px] text-slate-500">{pattern.fit}</span>
+                                  </div>
+                                  <span className="text-[11px] font-semibold text-[#0453B8]">{pattern.brand}</span>
+                                </button>
+                              ))}
+                              {INITIAL_MASTER_PATTERNS.filter(p => p.brand.toLowerCase().includes(patternSearch.toLowerCase()) || p.code.toLowerCase().includes(patternSearch.toLowerCase())).length === 0 && (
+                                <div className="py-6 text-center text-sm text-slate-500 font-medium">
+                                  No pattern found.
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Label className="text-xs font-bold text-slate-700 min-w-[45px]">SKU No</Label>
+                      <Input
+                        value={sqNumber}
+                        onChange={(e) => setSqNumber(e.target.value)}
+                        placeholder="e.g. 10 digit code"
+                        className="h-10 flex-1 bg-white border-slate-200 shadow-sm rounded-lg text-sm font-semibold px-3 focus-visible:ring-[#0453B8]"
+                      />
+                    </div>
+                  </div>
 
                     {/* Quantities Grid */}
                     <div className="flex flex-col gap-4 flex-1">
@@ -446,15 +515,15 @@ export function AddProductDialog({ open, onOpenChange, onAddProduct, editProduct
                         </Button>
                       </div>
 
-                      <div className="grid grid-cols-5 gap-3">
-                        {DEFAULT_SIZES.map(size => (
-                          <div key={size} className="flex flex-col shadow-sm rounded-md overflow-hidden border border-slate-200">
+                      <div className="grid gap-2 transition-all duration-300 grid-cols-5">
+                        {(showMoreSizes ? [...DEFAULT_SIZES, ...EXTENDED_SIZES] : DEFAULT_SIZES).map(size => (
+                          <div key={size} className="flex flex-col shadow-sm rounded-md overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
                             <div className="text-[11px] text-center font-bold text-slate-700 bg-slate-100 py-1.5 border-b border-slate-200">{size}</div>
                             <Input
                               id={`size-input-${size}`}
                               type="number"
                               min="0"
-                              className="h-10 text-center rounded-none border-0 shadow-none focus-visible:ring-[#0453B8] font-semibold text-slate-900 bg-white"
+                              className="h-9 text-center rounded-none border-0 shadow-none focus-visible:ring-[#0453B8] font-semibold text-slate-900 bg-white px-1"
                               value={quantities[size] || ""}
                               onChange={(e) => setQuantities({ ...quantities, [size]: parseInt(e.target.value) || 0 })}
                               onFocus={(e) => e.target.select()}
@@ -470,9 +539,6 @@ export function AddProductDialog({ open, onOpenChange, onAddProduct, editProduct
                                       nextInput.focus();
                                       (nextInput as HTMLInputElement).select();
                                     }
-                                  } else {
-                                    // if last one, maybe add to order?
-                                    // Or just do nothing for now, since they might want to click Add
                                   }
                                 }
                               }}
@@ -480,40 +546,6 @@ export function AddProductDialog({ open, onOpenChange, onAddProduct, editProduct
                           </div>
                         ))}
                       </div>
-
-                      {showMoreSizes && (
-                        <div className="grid grid-cols-5 gap-3 mt-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                          {EXTENDED_SIZES.map(size => (
-                            <div key={size} className="flex flex-col shadow-sm rounded-md overflow-hidden border border-slate-200">
-                              <div className="text-[11px] text-center font-bold text-slate-700 bg-slate-100 py-1.5 border-b border-slate-200">{size}</div>
-                              <Input
-                                id={`size-input-${size}`}
-                                type="number"
-                                min="0"
-                                className="h-10 text-center rounded-none border-0 shadow-none focus-visible:ring-[#0453B8] font-semibold text-slate-900 bg-white"
-                                value={quantities[size] || ""}
-                                onChange={(e) => setQuantities({ ...quantities, [size]: parseInt(e.target.value) || 0 })}
-                                onFocus={(e) => e.target.select()}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    const allSizes = showMoreSizes ? [...DEFAULT_SIZES, ...EXTENDED_SIZES] : DEFAULT_SIZES;
-                                    const currentIndex = allSizes.indexOf(size as any);
-                                    if (currentIndex < allSizes.length - 1) {
-                                      const nextSize = allSizes[currentIndex + 1];
-                                      const nextInput = document.getElementById(`size-input-${nextSize}`);
-                                      if (nextInput) {
-                                        nextInput.focus();
-                                        (nextInput as HTMLInputElement).select();
-                                      }
-                                    }
-                                  }
-                                }}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
               )}
@@ -521,34 +553,53 @@ export function AddProductDialog({ open, onOpenChange, onAddProduct, editProduct
           )}
 
           {viewMode === 'create' && (
-            <div className="flex flex-col gap-5 animate-in fade-in slide-in-from-right-4 duration-300 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <div className="grid grid-cols-2 gap-5">
+            <div className="flex flex-col animate-in fade-in slide-in-from-right-4 duration-300 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                
+                {/* Row 1 */}
                 <div className="flex flex-col gap-2">
-                  <Label className="text-xs font-bold text-slate-600 uppercase">Code <span className="text-red-500">*</span></Label>
+                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Image</Label>
+                  <div className="w-[100px] h-[100px] border border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center text-[#0453B8] cursor-pointer hover:bg-slate-50 transition-colors">
+                    <Plus className="w-5 h-5 mb-1 opacity-70" />
+                    <span className="text-[10px] font-semibold opacity-70">Add image</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Code <span className="text-red-500">*</span></Label>
                   <Input
-                    placeholder="e.g. 7"
-                    className="h-11 font-medium bg-slate-50 border-slate-200"
+                    placeholder="0"
+                    className="h-[48px] w-full text-sm font-medium bg-white border-slate-200 focus-visible:ring-[#0453B8] shadow-sm rounded-lg"
                     value={newProduct.code}
                     onChange={(e) => setNewProduct({ ...newProduct, code: e.target.value })}
                   />
                 </div>
+
+                {/* Row 2 */}
                 <div className="flex flex-col gap-2">
-                  <Label className="text-xs font-bold text-slate-600 uppercase">Default Rate (₹) <span className="text-red-500">*</span></Label>
+                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Product Name <span className="text-red-500">*</span></Label>
+                  <Input
+                    placeholder="e.g. Slim Fit Formal Shirt"
+                    className="h-[48px] w-full text-sm font-medium bg-white border-slate-200 focus-visible:ring-[#0453B8] shadow-sm rounded-lg"
+                    value={newProduct.name}
+                    onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Default Rate (₹)</Label>
                   <Input
                     type="number"
                     placeholder="0"
-                    className="h-11 font-medium bg-slate-50 border-slate-200"
+                    className="h-[48px] w-full text-sm font-medium bg-white border-slate-200 focus-visible:ring-[#0453B8] shadow-sm rounded-lg"
                     value={newProduct.rate}
                     onChange={(e) => setNewProduct({ ...newProduct, rate: e.target.value })}
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-5">
+                {/* Row 3 */}
                 <div className="flex flex-col gap-2">
-                  <Label className="text-xs font-bold text-slate-600 uppercase">Category <span className="text-red-500">*</span></Label>
+                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Category <span className="text-red-500">*</span></Label>
                   <Select value={newProduct.category} onValueChange={(v) => setNewProduct({ ...newProduct, category: v })}>
-                    <SelectTrigger className="h-11 font-medium bg-slate-50 border-slate-200">
+                    <SelectTrigger className="h-[48px] w-full text-sm font-medium bg-white border-slate-200 focus:ring-[#0453B8] shadow-sm rounded-lg">
                       <SelectValue placeholder="Select Category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -557,9 +608,9 @@ export function AddProductDialog({ open, onOpenChange, onAddProduct, editProduct
                   </Select>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label className="text-xs font-bold text-slate-600 uppercase">Sub-Category <span className="text-red-500">*</span></Label>
+                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Sub-Category <span className="text-red-500">*</span></Label>
                   <Select value={newProduct.subcategory} onValueChange={(v) => setNewProduct({ ...newProduct, subcategory: v })}>
-                    <SelectTrigger className="h-11 font-medium bg-slate-50 border-slate-200">
+                    <SelectTrigger className="h-[48px] w-full text-sm font-medium bg-white border-slate-200 focus:ring-[#0453B8] shadow-sm rounded-lg">
                       <SelectValue placeholder="Select Sub-Category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -567,23 +618,12 @@ export function AddProductDialog({ open, onOpenChange, onAddProduct, editProduct
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
 
-              <div className="flex flex-col gap-2">
-                <Label className="text-xs font-bold text-slate-600 uppercase">Product Name <span className="text-red-500">*</span></Label>
-                <Input
-                  placeholder="e.g. Slim Fit Formal Shirt"
-                  className="h-11 font-medium bg-slate-50 border-slate-200"
-                  value={newProduct.name}
-                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-5">
+                {/* Row 4 */}
                 <div className="flex flex-col gap-2">
-                  <Label className="text-xs font-bold text-slate-600 uppercase">Type</Label>
+                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Type</Label>
                   <Select value={newProduct.type} onValueChange={(v) => setNewProduct({ ...newProduct, type: v })}>
-                    <SelectTrigger className="h-11 font-medium bg-slate-50 border-slate-200">
+                    <SelectTrigger className="h-[48px] w-full text-sm font-medium bg-white border-slate-200 focus:ring-[#0453B8] shadow-sm rounded-lg">
                       <SelectValue placeholder="Select Type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -591,14 +631,18 @@ export function AddProductDialog({ open, onOpenChange, onAddProduct, editProduct
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              <div className="flex flex-col gap-2 mt-2">
-                <Label className="text-xs font-bold text-slate-600 uppercase">Image</Label>
-                <div className="w-24 h-24 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center text-slate-400 cursor-pointer hover:bg-slate-50 hover:border-[#0453B8] hover:text-[#0453B8] transition-colors">
-                  <Plus className="w-6 h-6 mb-1" />
-                  <span className="text-[10px] font-semibold">Add image</span>
+                <div className="flex flex-col gap-2">
+                  <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Type</Label>
+                  <Select value={newProduct.type2} onValueChange={(v) => setNewProduct({ ...newProduct, type2: v })}>
+                    <SelectTrigger className="h-[48px] w-full text-sm font-medium bg-white border-slate-200 focus:ring-[#0453B8] shadow-sm rounded-lg">
+                      <SelectValue placeholder="Select Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MASTER_TYPE2S.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
+
               </div>
             </div>
           )}
