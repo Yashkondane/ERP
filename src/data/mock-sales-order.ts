@@ -224,26 +224,42 @@ export const MOCK_CATALOG_PRODUCTS: CatalogProduct[] = [
   { id: "cat-18", code: "KTR001", name: "Kids Jogger", category: "Kids' Wear", subcategory: "Trouser", type: "Full Length", sqNumber: "1000000018", color: "Black", rate: 280.00 },
 ];
 
-export const MOCK_TRIM_CATALOG: Record<string, { code: string; color: string; image: string; description: string }> = {
-  Button: {
-    code: "BTN-18L-BLK",
-    color: "Black",
-    image: "/buttons .jpeg",
-    description: "18L Resin Button — Standard",
-  },
-  Label: {
-    code: "LBL-WVN-ZRA",
-    color: "Navy / White",
-    image: "/label.png",
-    description: "Woven Brand Label — Zara",
-  },
-  Hangtag: {
-    code: "HTG-PRM-BLK",
-    color: "Black",
-    image: "/hangtag.jpeg",
-    description: "Premium Cardboard Hangtag",
-  },
+// Each trim type has multiple variants (different colors/codes that come from the system)
+export interface TrimVariant {
+  code: string;
+  color: string;
+  image: string;
+  description: string;
+}
+
+export const MOCK_TRIM_CATALOG: Record<string, TrimVariant[]> = {
+  Button: [
+    { code: "BTN-18L-BLK", color: "Black",  image: "/buttons .jpeg", description: "18L Resin Button — Black" },
+    { code: "BTN-18L-WHT", color: "White",   image: "/buttons .jpeg", description: "18L Resin Button — White" },
+    { code: "BTN-18L-NVY", color: "Navy",    image: "/buttons .jpeg", description: "18L Resin Button — Navy" },
+    { code: "BTN-18L-RED", color: "Red",     image: "/buttons .jpeg", description: "18L Resin Button — Red" },
+  ],
+  Label: [
+    { code: "LBL-WVN-ZRA", color: "Navy / White", image: "/label.png", description: "Woven Brand Label — Zara" },
+    { code: "LBL-WVN-BLK", color: "Black / Gold", image: "/label.png", description: "Woven Brand Label — Black/Gold" },
+    { code: "LBL-PRT-WHT", color: "White",         image: "/label.png", description: "Printed Care Label — White" },
+  ],
+  Hangtag: [
+    { code: "HTG-PRM-BLK", color: "Black", image: "/hangtag.jpeg", description: "Premium Cardboard Hangtag — Black" },
+    { code: "HTG-PRM-WHT", color: "White", image: "/hangtag.jpeg", description: "Premium Cardboard Hangtag — White" },
+    { code: "HTG-ECO-KFT", color: "Kraft", image: "/hangtag.jpeg", description: "Eco Kraft Hangtag" },
+  ],
 };
+
+// Helper: get default (first) variant for a trim type
+export function getDefaultTrimVariant(trimType: string): TrimVariant | undefined {
+  return MOCK_TRIM_CATALOG[trimType]?.[0];
+}
+
+// Helper: find a specific variant by code
+export function getTrimVariantByCode(trimType: string, code: string): TrimVariant | undefined {
+  return MOCK_TRIM_CATALOG[trimType]?.find(v => v.code === code);
+}
 
 export const INITIAL_SALES_ORDER = {
   salesOrderNo: "SO-26-000125",

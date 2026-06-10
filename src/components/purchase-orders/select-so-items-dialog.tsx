@@ -8,36 +8,28 @@ import { POItem } from "@/types/purchase-order";
 
 // All mock SO items we use across SOs
 const ALL_SO_ITEMS: (ProductLineItem & { soItem: string, requiredQtyMtr: number, soId: string, soNo: string })[] = [
-  {
-    id: "line-1", productId: "ST001", name: "Men's Casual Shirt", type: "Half Sleeve Regular Collar",
-    color: "White", sizeBreakdown: { XS: 50, S: 100, M: 150, L: 120, XL: 80, XXL: 0 },
-    rate: 250, soItem: "SO001-01", requiredQtyMtr: 900.00, soId: "1", soNo: "SO-2026-1015",
-  } as any,
-  {
-    id: "line-2", productId: "ST003", name: "Men's Casual Shirt", type: "Half Sleeve Cuban Collar",
-    color: "Navy", sizeBreakdown: { XS: 30, S: 80, M: 120, L: 100, XL: 70, XXL: 0 },
-    rate: 250, soItem: "SO001-02", requiredQtyMtr: 760.00, soId: "1", soNo: "SO-2026-1015",
-  } as any,
-  {
-    id: "line-3", productId: "TS001", name: "Men's Polo T-Shirt", type: "Half Sleeve",
-    color: "Black", sizeBreakdown: { XS: 40, S: 80, M: 120, L: 100, XL: 60, XXL: 0 },
-    rate: 250, soItem: "SO001-03", requiredQtyMtr: 640.00, soId: "1", soNo: "SO-2026-1015",
-  } as any,
-  {
-    id: "line-4", productId: "DJ001", name: "Denim Jacket", type: "Regular Fit",
-    color: "Blue", sizeBreakdown: { XS: 20, S: 60, M: 90, L: 80, XL: 50, XXL: 0 },
-    rate: 350, soItem: "SO002-01", requiredQtyMtr: 540.00, soId: "3", soNo: "SO-2026-1002",
-  } as any,
-  {
-    id: "line-5", productId: "ST004", name: "Slim Fit Trouser", type: "Regular",
-    color: "Khaki", sizeBreakdown: { XS: 30, S: 70, M: 110, L: 90, XL: 60, XXL: 0 },
-    rate: 280, soItem: "SO002-02", requiredQtyMtr: 420.00, soId: "3", soNo: "SO-2026-1002",
-  } as any,
-  {
-    id: "line-6", productId: "TS002", name: "Men's Polo T-Shirt", type: "Short Sleeve",
-    color: "White", sizeBreakdown: { XS: 25, S: 65, M: 100, L: 85, XL: 45, XXL: 0 },
-    rate: 220, soItem: "SO003-01", requiredQtyMtr: 380.00, soId: "7", soNo: "SO-2026-1008",
-  } as any,
+  // SO-2026-1015 (id: "1") — Zara
+  { id: "line-1", productId: "ST001", name: "Men's Casual Shirt", type: "Half Sleeve Regular Collar", color: "White", sizeBreakdown: { XS: 50, S: 100, M: 150, L: 120, XL: 80, XXL: 0 }, rate: 250, soItem: "SO001-01", requiredQtyMtr: 900.00, soId: "1", soNo: "SO-2026-1015" } as any,
+  { id: "line-2", productId: "ST003", name: "Men's Casual Shirt", type: "Half Sleeve Cuban Collar", color: "Navy", sizeBreakdown: { XS: 30, S: 80, M: 120, L: 100, XL: 70, XXL: 0 }, rate: 250, soItem: "SO001-02", requiredQtyMtr: 760.00, soId: "1", soNo: "SO-2026-1015" } as any,
+  { id: "line-3", productId: "TS001", name: "Men's Polo T-Shirt", type: "Half Sleeve", color: "Black", sizeBreakdown: { XS: 40, S: 80, M: 120, L: 100, XL: 60, XXL: 0 }, rate: 250, soItem: "SO001-03", requiredQtyMtr: 640.00, soId: "1", soNo: "SO-2026-1015" } as any,
+  // SO-2026-1001 (id: "2") — H&M
+  { id: "line-7", productId: "HM001", name: "Women's Linen Blouse", type: "Relaxed Fit", color: "Ivory", sizeBreakdown: { XS: 60, S: 120, M: 140, L: 100, XL: 50, XXL: 0 }, rate: 230, soItem: "SO004-01", requiredQtyMtr: 700.00, soId: "2", soNo: "SO-2026-1001" } as any,
+  { id: "line-8", productId: "HM002", name: "Men's Chino Trouser", type: "Slim Fit", color: "Beige", sizeBreakdown: { XS: 20, S: 70, M: 110, L: 90, XL: 40, XXL: 0 }, rate: 290, soItem: "SO004-02", requiredQtyMtr: 480.00, soId: "2", soNo: "SO-2026-1001" } as any,
+  // SO-2026-1002 (id: "3") — Zara (draft)
+  { id: "line-4", productId: "DJ001", name: "Denim Jacket", type: "Regular Fit", color: "Blue", sizeBreakdown: { XS: 20, S: 60, M: 90, L: 80, XL: 50, XXL: 0 }, rate: 350, soItem: "SO002-01", requiredQtyMtr: 540.00, soId: "3", soNo: "SO-2026-1002" } as any,
+  { id: "line-5", productId: "ST004", name: "Slim Fit Trouser", type: "Regular", color: "Khaki", sizeBreakdown: { XS: 30, S: 70, M: 110, L: 90, XL: 60, XXL: 0 }, rate: 280, soItem: "SO002-02", requiredQtyMtr: 420.00, soId: "3", soNo: "SO-2026-1002" } as any,
+  // SO-2026-1003 (id: "4") — Levi's
+  { id: "line-9",  productId: "LV001", name: "Slim Fit Jeans", type: "511 Slim", color: "Dark Indigo", sizeBreakdown: { XS: 0, S: 80, M: 130, L: 110, XL: 60, XXL: 20 }, rate: 420, soItem: "SO005-01", requiredQtyMtr: 660.00, soId: "4", soNo: "SO-2026-1003" } as any,
+  { id: "line-10", productId: "LV002", name: "Denim Shorts", type: "Cut Off", color: "Light Wash", sizeBreakdown: { XS: 30, S: 60, M: 90, L: 70, XL: 30, XXL: 0 }, rate: 380, soItem: "SO005-02", requiredQtyMtr: 360.00, soId: "4", soNo: "SO-2026-1003" } as any,
+  // SO-2026-1004 (id: "5") — Uniqlo
+  { id: "line-11", productId: "UQ001", name: "Men's Ultra Light Down Jacket", type: "Packable", color: "Navy", sizeBreakdown: { XS: 30, S: 80, M: 150, L: 120, XL: 70, XXL: 20 }, rate: 550, soItem: "SO006-01", requiredQtyMtr: 1200.00, soId: "5", soNo: "SO-2026-1004" } as any,
+  { id: "line-12", productId: "UQ002", name: "Women's Fleece Jacket", type: "Full Zip", color: "Off White", sizeBreakdown: { XS: 50, S: 100, M: 130, L: 90, XL: 40, XXL: 0 }, rate: 480, soItem: "SO006-02", requiredQtyMtr: 820.00, soId: "5", soNo: "SO-2026-1004" } as any,
+  { id: "line-13", productId: "UQ003", name: "Men's Oxford Shirt", type: "Regular Fit", color: "White", sizeBreakdown: { XS: 20, S: 60, M: 110, L: 95, XL: 55, XXL: 10 }, rate: 310, soItem: "SO006-03", requiredQtyMtr: 590.00, soId: "5", soNo: "SO-2026-1004" } as any,
+  // SO-2026-1005 (id: "6") — Marks & Spencer
+  { id: "line-14", productId: "MS001", name: "Women's Tailored Blazer", type: "Single Button", color: "Charcoal", sizeBreakdown: { XS: 30, S: 80, M: 100, L: 80, XL: 40, XXL: 10 }, rate: 680, soItem: "SO007-01", requiredQtyMtr: 940.00, soId: "6", soNo: "SO-2026-1005" } as any,
+  { id: "line-15", productId: "MS002", name: "Men's Formal Trousers", type: "Straight Fit", color: "Navy", sizeBreakdown: { XS: 0, S: 60, M: 120, L: 110, XL: 70, XXL: 20 }, rate: 520, soItem: "SO007-02", requiredQtyMtr: 760.00, soId: "6", soNo: "SO-2026-1005" } as any,
+  // SO-2026-1008 (id: "7") — Zara (cancelled)
+  { id: "line-6", productId: "TS002", name: "Men's Polo T-Shirt", type: "Short Sleeve", color: "White", sizeBreakdown: { XS: 25, S: 65, M: 100, L: 85, XL: 45, XXL: 0 }, rate: 220, soItem: "SO003-01", requiredQtyMtr: 380.00, soId: "7", soNo: "SO-2026-1008" } as any,
 ];
 
 interface SelectSalesOrderItemsDialogProps {

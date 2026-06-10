@@ -71,8 +71,19 @@ export function PurchaseOrderForm({
   useEffect(() => {
     if (initialPo) {
       methods.reset({
-        buyerId: initialPo.buyerId || "b-3"
+        ...initialPo,
+        buyerId: initialPo.buyerId || "b-3",
+        supplier: initialPo.supplier || ""
       });
+      
+      const buyerObj = MOCK_BUYERS.find(b => b.id === (initialPo.buyerId || "b-3"));
+      if (buyerObj) {
+        setSelectedBuyerId(buyerObj.name);
+      }
+      if (type === "Trims" && initialPo.itemDesc) {
+        setSelectedTrimItem(initialPo.itemDesc);
+      }
+
       const numericQty = parseInt((initialPo.qty || "0").toString().replace(/[^0-9]/g, "")) || 1200;
       const rate = initialPo?.id === "FPO-5002" ? 185 : (initialPo?.rate || 180);
       const baseMaterial = initialPo?.material || initialPo?.itemDesc || (type === "Fabric" ? "Cotton Fabric" : "Button");
@@ -136,6 +147,26 @@ export function PurchaseOrderForm({
   const handleAddItem = (item: POItem) => {
     if (editingItem) {
       setPoItems(poItems.map(i => i.id === item.id ? item : i));
+    } else if (type === "Trims") {
+      // Group by Trim Item + Code + Color — merge qty if same combination exists
+      const existing = poItems.find(
+        i => i.material === item.material && i.code === item.code && i.colorShade === item.colorShade
+      );
+      if (existing) {
+        setPoItems(poItems.map(i =>
+          i.id === existing.id
+            ? {
+                ...i,
+                qty: i.qty + item.qty,
+                requiredQty: (i.requiredQty || 0) + (item.requiredQty || 0),
+                buffer: (i.buffer || 0) + (item.buffer || 0),
+                amount: (i.qty + item.qty) * i.rate,
+              }
+            : i
+        ));
+      } else {
+        setPoItems([...poItems, { ...item, soItemId: selectedSoItemContext?.id }]);
+      }
     } else {
       setPoItems([...poItems, { ...item, soItemId: selectedSoItemContext?.id }]);
     }
