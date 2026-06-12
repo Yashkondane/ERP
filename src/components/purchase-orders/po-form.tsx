@@ -58,16 +58,13 @@ export function PurchaseOrderForm({
     }
   });
 
-  const [poItems, setPoItems] = useState<POItem[]>([]);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [poItems, setPoItems] = useState<POItem[]>(initialPo?.items || []);
   const [editingItem, setEditingItem] = useState<POItem | null>(null);
-  
-  const [isSelectSoItemDialogOpen, setIsSelectSoItemDialogOpen] = useState(false);
-  const [selectedSoItemContext, setSelectedSoItemContext] = useState<any>(null);
-
-  const [selectedBuyerId, setSelectedBuyerId] = useState<string>("");
-  const [isLinkedToSo, setIsLinkedToSo] = useState<boolean>(true);
-  const [selectedTrimItem, setSelectedTrimItem] = useState<string>("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedSoItemContext, setSelectedSoItemContext] = useState<any | null>(null);
+  const [selectedTrimItem, setSelectedTrimItem] = useState<string>(type === "Fabric" ? "Cotton Fabric" : "Button");
+  const [selectedBuyerId, setSelectedBuyerId] = useState<string | null>(null);
+  const [isLinkedToSo, setIsLinkedToSo] = useState(true);
   const [sortCategory, setSortCategory] = useState<string>("All Categories");
 
   const [showAddress, setShowAddress] = useState(true);
@@ -215,24 +212,133 @@ export function PurchaseOrderForm({
   const handleOpenAddDialog = () => {
     setEditingItem(null);
     setSelectedSoItemContext(null);
-    
-    // If not linked to a sales order (e.g., sample PO), skip the SO selection dialog
-    if (!isLinkedToSo) {
-      setIsAddDialogOpen(true);
-    } else {
-      // If linked to a sales order, show the SO item selection dialog first
-      setIsSelectSoItemDialogOpen(true);
-    }
-  };
-
-  const handleSoItemNext = (soItem: any, trimItem?: string) => {
-    setSelectedSoItemContext(soItem);
-    if (trimItem) setSelectedTrimItem(trimItem);
-    setIsSelectSoItemDialogOpen(false);
     setIsAddDialogOpen(true);
   };
 
-  const qtyByUom = poItems.reduce((acc, item) => {
+  const handleSoItemNext = (soItems: any[], trimItem?: string) => {
+    const isFabric = type === "Fabric";
+    const rate = 0;
+
+    const newItems: POItem[] = [];
+
+    soItems.forEach(soItem => {
+      const baseQty = isFabric ? soItem.requiredQtyMtr : Object.values(soItem.sizeBreakdown || {}).reduce((a: any, b: any) => a + b, 0);
+      
+      const soName = soItem.name || "Product";
+      const imgUrl = soName.includes("T-Shirt") ? "/men casual tshirt.jpeg" : 
+                     soName.includes("Shirt") ? "/men casual half shirt.jpg" :
+                     soName.includes("Jacket") ? "/mens casual full sleeve shirt.jpg" : "/men regualr fit shirt.jpeg";
+                     
+      if (isFabric) {
+        const materialCategory = selectedTrimItem || "Cotton Fabric";
+        newItems.push({
+          id: "item-" + Math.random().toString(36).substr(2, 9),
+          soItemId: soItem.id,
+          material: materialCategory,
+          code: undefined,
+          gsmContent: "180gsm CO",
+          width: "44\"",
+          colorShade: "White",
+          requiredQty: baseQty,
+          qty: 0,
+          buffer: 0,
+          uom: "mtr",
+          rate: rate,
+          gst: 5,
+          amount: 0,
+          deliveryDate: "",
+          images: [],
+          productName: soName,
+          productImage: imgUrl,
+          productCode: soItem.productId,
+          productFit: soItem.type,
+          soNo: soItem.soNo,
+        });
+      } else {
+        ["Button", "Label", "Hangtag"].forEach(mat => {
+          const multiplier = mat === "Button" ? 7 : 1;
+          const reqQty = baseQty * multiplier;
+          newItems.push({
+            id: "item-" + Math.random().toString(36).substr(2, 9),
+            soItemId: soItem.id,
+            material: mat,
+            code: "TRM-001",
+            gsmContent: "Standard",
+            width: undefined,
+            colorShade: "Black",
+            requiredQty: reqQty,
+            qty: 0,
+            buffer: 0,
+            uom: "pcs",
+            rate: rate,
+            gst: 5,
+            amount: 0,
+            deliveryDate: "",
+            images: [],
+            productName: soName,
+            productImage: imgUrl,
+            productCode: soItem.productId,
+            productFit: soItem.type,
+            soNo: soItem.soNo,
+          });
+        });
+      }
+    });
+
+    setPoItems(prev => [...newItems, ...prev]);
+  };
+
+  const handleQtyChange = (itemId: string, newQty: number) => {
+    setPoItems(poItems.map(item => 
+      item.id === itemId 
+        ? { ...item, qty: newQty, amount: newQty * (item.rate || 0) } 
+        : item
+    ));
+  };
+
+  const handleRateChange = (itemId: string, newRate: number) => {
+    setPoItems(poItems.map(item => 
+      item.id === itemId 
+        ? { ...item, rate: newRate, amount: (item.qty || 0) * newRate } 
+        : item
+    ));
+  };
+
+  const handleDateChange = (itemId: string, newDate: string) => {
+    setPoItems(poItems.map(item => 
+      item.id === itemId ? { ...item, deliveryDate: newDate } : item
+    ));
+  };
+
+  const handleColorChange = (itemId: string, newColor: string) => {
+    setPoItems(poItems.map(item => 
+      item.id === itemId ? { ...item, colorShade: newColor } : item
+    ));
+  };
+
+  const handleGsmChange = (itemId: string, newGsm: string) => {
+    setPoItems(poItems.map(item => 
+      item.id === itemId ? { ...item, gsmContent: newGsm } : item
+    ));
+  };
+
+  const handleWidthChange = (itemId: string, newWidth: string) => {
+    setPoItems(poItems.map(item => 
+      item.id === itemId ? { ...item, width: newWidth } : item
+    ));
+  };
+
+  const handleImageChange = (itemId: string, imageUrl: string) => {
+    setPoItems(poItems.map(item => 
+      item.id === itemId ? { ...item, fabricImage: imageUrl } : item
+    ));
+  };
+
+  const filteredPoItems = poItems.filter(item => 
+    !selectedTrimItem || item.material === selectedTrimItem
+  );
+
+  const qtyByUom = filteredPoItems.reduce((acc, item) => {
     const uom = item.uom || (type === 'Fabric' ? 'mtr' : 'pcs');
     acc[uom] = (acc[uom] || 0) + (Number(item.qty) || 0);
     return acc;
@@ -280,25 +386,45 @@ export function PurchaseOrderForm({
                   <div className="p-2 bg-slate-50 rounded-full border border-slate-100 flex items-center justify-center w-11 h-11 text-blue-600 shrink-0">
                     <FileText className="w-5 h-5" />
                   </div>
-                  <div className="flex flex-col">
-                    <h1 className="text-xl font-semibold text-slate-900 mb-2.5">
+                  <div className="flex items-center gap-6">
+                    <h1 className="text-xl font-semibold text-slate-900">
                       {isEditMode ? `Edit ${type} Purchase Order` : `New ${type} Purchase Order`}
                     </h1>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center bg-blue-50/80 border border-blue-100 rounded-md px-3 py-1 shadow-sm">
-                        <span className="text-[10px] font-bold text-[#0453B8]/70 uppercase tracking-wider mr-2">PO NUMBER</span>
-                        <span className="text-xs font-bold text-[#0453B8] tracking-wide">
+                    <div className="flex items-stretch gap-4">
+                      {/* PO Number Badge */}
+                      <div className="flex flex-col bg-blue-50/80 border border-blue-100 rounded-lg px-5 py-3 shadow-sm min-w-[140px]">
+                        <span className="text-[11px] font-bold text-[#0453B8]/80 uppercase tracking-wider mb-1.5">PO NUMBER</span>
+                        <span className="text-lg font-black text-[#0453B8] tracking-wide leading-none">
                           {initialPo?.id || (type === "Fabric" ? "FPO-1453" : "TPO-8006")}
                         </span>
                       </div>
-                      <div className="flex items-center bg-slate-50 border border-slate-200 rounded-md px-3 py-1 shadow-sm">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-2">
-                          {isEditMode ? "STATUS" : "PO DATE"}
+                      
+                      {/* PO Date Badge */}
+                      <div className="flex flex-col bg-slate-50 border border-slate-200 rounded-lg px-5 py-3 shadow-sm min-w-[140px]">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                          PO DATE
                         </span>
-                        <span className="text-xs font-bold text-slate-700 tracking-wide">
-                          {isEditMode ? initialPo?.status : "06-JUN-2026"}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="text-lg font-black text-slate-700 tracking-wide leading-none mb-1.5">
+                            {isEditMode ? initialPo?.date || "06-JUN-2026" : "06-JUN-2026"}
+                          </span>
+                          <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider leading-none">
+                            SATURDAY
+                          </span>
+                        </div>
                       </div>
+
+                      {/* Status Badge */}
+                      {isEditMode && (
+                        <div className="flex flex-col bg-emerald-50 border border-emerald-100 rounded-lg px-5 py-3 shadow-sm min-w-[140px]">
+                          <span className="text-[11px] font-bold text-emerald-600/80 uppercase tracking-wider mb-1.5">
+                            STATUS
+                          </span>
+                          <span className="text-lg font-black text-emerald-700 tracking-wide leading-none">
+                            {initialPo?.status || "Draft"}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -354,7 +480,17 @@ export function PurchaseOrderForm({
                     <div className="relative">
                       <Select
                         value={selectedBuyerId || ""}
-                        onValueChange={(val) => { setSelectedBuyerId(val); methods.setValue("buyerId", ""); }}
+                        onValueChange={(val) => {
+                          const hasLinkedItems = poItems.some(i => i.soItemId);
+                          if (hasLinkedItems && !window.confirm("Changing the buyer will clear all selected products from the table. Continue?")) {
+                            return;
+                          }
+                          setSelectedBuyerId(val); 
+                          methods.setValue("buyerId", ""); 
+                          if (hasLinkedItems) {
+                            setPoItems(prev => prev.filter(i => !i.soItemId));
+                          }
+                        }}
                       >
                         <SelectTrigger className="w-full h-10 border-slate-200 text-sm focus:ring-[#0453B8] bg-white font-medium truncate">
                           <SelectValue placeholder="Select Buyer" />
@@ -382,7 +518,7 @@ export function PurchaseOrderForm({
                         }}
                         className="w-3.5 h-3.5 rounded border-slate-300 text-[#0453B8] focus:ring-[#0453B8] cursor-pointer"
                       />
-                      <span className="cursor-pointer" onClick={() => setIsLinkedToSo(!isLinkedToSo)}>
+                      <span className="text-slate-700">
                         Add Products {isLinkedToSo && <span className="text-red-500">*</span>}
                       </span>
                     </Label>
@@ -391,57 +527,44 @@ export function PurchaseOrderForm({
                         <DropdownMenuTrigger asChild>
                           <Button 
                             variant="outline" 
-                            disabled={!isLinkedToSo || !selectedBuyerId}
+                            disabled={!isLinkedToSo || !selectedBuyerId || !selectedTrimItem}
                             className="w-full justify-between h-10 border-slate-200 text-sm font-normal truncate disabled:opacity-50 disabled:cursor-not-allowed bg-white px-3"
                           >
-                            {selectedSoIds.length > 0 
-                              ? `${selectedSoIds.length} order${selectedSoIds.length > 1 ? "s" : ""} selected` 
-                              : <span className="text-muted-foreground">Select Sales Orders</span>}
+                            {poItems.filter(i => i.soItemId).length > 0 
+                              ? `${poItems.filter(i => i.soItemId).length} product${poItems.filter(i => i.soItemId).length > 1 ? "s" : ""} selected` 
+                              : <span className="text-muted-foreground">{!selectedTrimItem ? "Select Category First" : "Select Products"}</span>}
                             <ChevronDown className="h-4 w-4 opacity-50" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-[600px] max-h-[500px] flex flex-col p-0 shadow-2xl rounded-xl border-slate-200 overflow-hidden" align="start">
                           {(() => {
-                            let filteredSalesOrders = MOCK_SALES_ORDERS_LIST.filter(so => !selectedBuyerId || so.buyer === selectedBuyerId);
-                            if (sortCategory !== "All Categories") {
-                              filteredSalesOrders = filteredSalesOrders.filter(so => so.category === sortCategory);
+                            let filteredItems = ALL_SO_ITEMS;
+                            if (selectedBuyerId) {
+                              const buyerSoIds = MOCK_SALES_ORDERS_LIST.filter(so => so.buyer === selectedBuyerId).map(so => so.id);
+                              filteredItems = filteredItems.filter(item => buyerSoIds.includes(item.soId));
                             }
-                            const allSelected = filteredSalesOrders.length > 0 && selectedSoIds.length === filteredSalesOrders.length;
                             
                             return (
                               <>
-                                <div className="p-3 border-b border-slate-100 bg-slate-50 flex flex-col gap-2">
-                                  <span className="text-xs font-bold text-slate-700">Filter by Category</span>
-                                  <div className="flex flex-wrap gap-2">
-                                    {["All Categories", "T-Shirts", "Shirts", "Jackets", "Trousers"].map(cat => (
-                                      <div
-                                        key={cat}
-                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSortCategory(cat); }}
-                                        className={`cursor-pointer px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border ${sortCategory === cat ? 'bg-[#0453B8] text-white border-[#0453B8]' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}
-                                      >
-                                        {cat}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
                                 <div className="overflow-y-auto p-3 flex-1 custom-scrollbar max-h-[400px]">
                                   <div className="grid grid-cols-3 gap-3">
-                                    {filteredSalesOrders.map((so) => {
-                                      const soName = so.productName || "Product";
-                                      const imgUrl = so.category === "T-Shirts" ? "/men casual tshirt.jpeg" : 
-                                                     so.category === "Shirts" ? "/men casual half shirt.jpg" :
-                                                     so.category === "Jackets" ? "/mens casual full sleeve shirt.jpg" : "/men regualr fit shirt.jpeg";
-                                      const isSelected = selectedSoIds.includes(so.id);
+                                    {filteredItems.map((item) => {
+                                      const soName = item.name || "Product";
+                                      const imgUrl = soName.includes("T-Shirt") ? "/men casual tshirt.jpeg" : 
+                                                     soName.includes("Shirt") ? "/men casual half shirt.jpg" :
+                                                     soName.includes("Jacket") ? "/mens casual full sleeve shirt.jpg" : "/men regualr fit shirt.jpeg";
+                                      const isSelected = poItems.some(i => i.soItemId === item.id);
                                       
                                       return (
                                         <DropdownMenuItem
-                                          key={so.id}
+                                          key={item.id}
                                           onSelect={(e) => {
                                             e.preventDefault();
-                                            const newIds = !isSelected 
-                                              ? [...selectedSoIds, so.id] 
-                                              : selectedSoIds.filter((id: string) => id !== so.id);
-                                            methods.setValue("buyerId", newIds.join(","));
+                                            if (isSelected) {
+                                              setPoItems(prev => prev.filter(i => i.soItemId !== item.id));
+                                            } else {
+                                              handleSoItemNext([item]);
+                                            }
                                           }}
                                           className={`relative p-3 flex flex-col items-center gap-3 rounded-xl overflow-hidden cursor-pointer transition-all border !bg-transparent focus:!bg-transparent ${
                                             isSelected ? 'border-[#0453B8] bg-blue-50/30 shadow-sm' : 'border-slate-200 hover:border-[#0453B8]/50 hover:bg-slate-50'
@@ -452,6 +575,7 @@ export function PurchaseOrderForm({
                                           </div>
                                           
                                           <div className="flex flex-col items-center justify-center w-full text-center">
+                                            <span className="text-[#0453B8] font-bold text-[10px] uppercase tracking-wide mb-0.5">{item.productId}</span>
                                             <span className="text-slate-900 font-bold text-xs truncate w-full" title={soName}>{soName}</span>
                                           </div>
 
@@ -463,9 +587,9 @@ export function PurchaseOrderForm({
                                         </DropdownMenuItem>
                                       );
                                     })}
-                                    {filteredSalesOrders.length === 0 && (
-                                      <div className="py-8 text-center text-slate-500 text-sm font-medium">
-                                        No sales orders found for this category.
+                                    {filteredItems.length === 0 && (
+                                      <div className="py-8 text-center text-slate-500 text-sm font-medium col-span-3">
+                                        No products found for this buyer.
                                       </div>
                                     )}
                                   </div>
@@ -476,25 +600,18 @@ export function PurchaseOrderForm({
                                     <input
                                       type="checkbox"
                                       className="w-4 h-4 rounded border-slate-300 text-[#0453B8] focus:ring-[#0453B8] cursor-pointer"
-                                      checked={allSelected}
+                                      checked={filteredItems.length > 0 && filteredItems.every(item => poItems.some(i => i.soItemId === item.id))}
                                       onChange={(e) => {
                                         if (e.target.checked) {
-                                          methods.setValue("buyerId", filteredSalesOrders.map(so => so.id).join(","));
+                                          const unselected = filteredItems.filter(item => !poItems.some(i => i.soItemId === item.id));
+                                          if (unselected.length > 0) handleSoItemNext(unselected);
                                         } else {
-                                          methods.setValue("buyerId", "");
+                                          setPoItems(prev => prev.filter(i => !filteredItems.some(f => f.id === i.soItemId)));
                                         }
                                       }}
                                     />
-                                    Select All Orders
+                                    Select All Products
                                   </label>
-                                  
-                                  <DropdownMenuItem
-                                    disabled={selectedSoIds.length === 0}
-                                    onSelect={() => setIsSelectSoItemDialogOpen(true)}
-                                    className="bg-[#0453B8] hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-md flex items-center justify-center cursor-pointer transition-colors focus:bg-blue-700 focus:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    Save & Select Items <ArrowRight className="w-4 h-4 ml-2" />
-                                  </DropdownMenuItem>
                                 </div>
                               </>
                             );
@@ -564,18 +681,52 @@ export function PurchaseOrderForm({
 
               {/* 2. Items Table (REUSED COMPONENT) */}
               <POItemsTable
-                items={poItems}
+                items={filteredPoItems}
                 onEditClick={handleEditClick}
                 onDeleteClick={handleDeleteItem}
                 onOpenAddDialog={handleOpenAddDialog}
+                onQtyChange={handleQtyChange}
+                onRateChange={handleRateChange}
+                onDateChange={handleDateChange}
+                onColorChange={handleColorChange}
+                onGsmChange={handleGsmChange}
+                onWidthChange={handleWidthChange}
+                onImageChange={handleImageChange}
                 totalQtyDisplay={totalQtyDisplay}
                 itemLabel={itemLabel}
                 specLabel={specLabel}
                 type={type}
+                headerContent={
+                  <div className="flex items-center text-slate-600 font-bold text-sm">
+                    <span className="ml-1">(</span>
+                    <Select 
+                      value={selectedTrimItem} 
+                      onValueChange={(newVal) => {
+                        setSelectedTrimItem(newVal);
+                      }}
+                    >
+                      <SelectTrigger className="w-auto h-auto px-1 py-0 border-none shadow-none text-slate-600 font-bold focus:ring-0 bg-transparent hover:bg-slate-100 rounded">
+                         <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                         {type === "Trims" ? (
+                           <>
+                             <SelectItem value="Button">Button</SelectItem>
+                             <SelectItem value="Label">Label</SelectItem>
+                             <SelectItem value="Hangtag">Hangtag</SelectItem>
+                           </>
+                         ) : (
+                           <>
+                             <SelectItem value="Cotton Fabric">Cotton Fabric</SelectItem>
+                             <SelectItem value="Linen">Linen</SelectItem>
+                           </>
+                         )}
+                      </SelectContent>
+                    </Select>
+                    <span>)</span>
+                  </div>
+                }
               />
-
-
-
             </div>
 
             {/* Right Column (Sidebar) */}
@@ -668,16 +819,6 @@ export function PurchaseOrderForm({
             material: type === "Fabric" ? "Cotton Fabric" : selectedTrimItem,
             uom: type === "Fabric" ? "mtr" : "pcs",
           } : undefined}
-        />
-
-        <SelectSalesOrderItemsDialog 
-          open={isSelectSoItemDialogOpen}
-          onOpenChange={setIsSelectSoItemDialogOpen}
-          buyerId={methods.watch("buyerId")}
-          existingPoItems={poItems}
-          onNext={handleSoItemNext}
-          type={type}
-          supplierName={selectedSupplier}
         />
       </div>
     </FormProvider>

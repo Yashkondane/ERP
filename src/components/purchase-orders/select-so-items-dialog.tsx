@@ -38,7 +38,7 @@ interface SelectSalesOrderItemsDialogProps {
   onOpenChange: (open: boolean) => void;
   buyerId: string; // For Trims this is comma-separated SO IDs; for Fabric it's a single SO ID
   existingPoItems: POItem[];
-  onNext: (selectedSoItem: ProductLineItem & { soItem: string, requiredQtyMtr: number }, trimItem?: string) => void;
+  onNext: (selectedSoItems: (ProductLineItem & { soItem: string, requiredQtyMtr: number, soId: string, soNo: string })[], trimItem?: string) => void;
   type?: "Fabric" | "Trims";
   supplierName?: string;
 }
@@ -52,7 +52,7 @@ export function SelectSalesOrderItemsDialog({
   type = "Fabric",
   supplierName,
 }: SelectSalesOrderItemsDialogProps) {
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [trimItem, setTrimItem] = useState<string>("");
 
   const isTrim = type === "Trims";
@@ -78,11 +78,24 @@ export function SelectSalesOrderItemsDialog({
   const soItems = itemsGrouped.flatMap(g => g.items);
 
   const handleNext = () => {
-    if (!selectedItemId) return;
-    const item = soItems.find(i => i.id === selectedItemId);
-    if (item) {
-      onNext(item, trimItem);
-      setTimeout(() => setSelectedItemId(null), 300);
+    if (selectedItemIds.length === 0) return;
+    const items = soItems.filter(i => selectedItemIds.includes(i.id));
+    if (items.length > 0) {
+      onNext(items, trimItem);
+      setTimeout(() => setSelectedItemIds([]), 300);
+    }
+  };
+
+  const toggleSelection = (id: string) => {
+    setSelectedItemIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    const availableItems = soItems.filter(item => !existingPoItems.some(poItem => poItem.soItemId === item.id));
+    if (selectedItemIds.length === availableItems.length) {
+      setSelectedItemIds([]);
+    } else {
+      setSelectedItemIds(availableItems.map(i => i.id));
     }
   };
 
@@ -97,15 +110,15 @@ export function SelectSalesOrderItemsDialog({
     return (
       <tr
         key={item.id}
-        className={`${isLocked ? 'bg-slate-50/70' : 'hover:bg-blue-50/50 cursor-pointer transition-colors'} ${selectedItemId === item.id ? 'bg-blue-50/50' : ''}`}
-        onClick={() => !isLocked && setSelectedItemId(item.id)}
+        className={`${isLocked ? 'bg-slate-50/70' : 'hover:bg-blue-50/50 cursor-pointer transition-colors'} ${selectedItemIds.includes(item.id) ? 'bg-blue-50/50' : ''}`}
+        onClick={() => !isLocked && toggleSelection(item.id)}
       >
         <td className="px-4 py-4 text-center">
           <div className="flex justify-center">
             <input
               type="checkbox"
-              checked={selectedItemId === item.id || isLocked}
-              onChange={() => !isLocked && setSelectedItemId(item.id)}
+              checked={selectedItemIds.includes(item.id) || isLocked}
+              onChange={() => !isLocked && toggleSelection(item.id)}
               disabled={isLocked}
               className={`w-4 h-4 rounded cursor-pointer accent-[#0453B8] ${isLocked ? 'text-slate-400 border-slate-300' : 'text-[#0453B8] border-slate-300 focus:ring-[#0453B8]'}`}
               onClick={(e) => e.stopPropagation()}
@@ -189,7 +202,13 @@ export function SelectSalesOrderItemsDialog({
             <table className="w-full text-sm text-left">
               <thead className="bg-[#F8FAFC] border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3 font-bold text-slate-700 text-center w-16">Select</th>
+                  <th className="px-4 py-3 font-bold text-slate-700 text-center w-16">
+                    <input 
+                      type="checkbox" 
+                      onChange={toggleSelectAll} 
+                      className="w-4 h-4 rounded cursor-pointer accent-[#0453B8] text-[#0453B8] border-slate-300 focus:ring-[#0453B8]"
+                    />
+                  </th>
                   <th className="px-4 py-3 font-bold text-slate-700 text-center">Image</th>
                   <th className="px-4 py-3 font-bold text-slate-700">Product / Style</th>
                   <th className="px-4 py-3 font-bold text-slate-700 text-center">Color</th>
@@ -235,11 +254,11 @@ export function SelectSalesOrderItemsDialog({
 
         <div className="px-6 py-4 border-t border-slate-200 flex justify-end items-center bg-slate-50 rounded-b-lg flex-shrink-0">
           <Button
-            disabled={!selectedItemId || (type === "Trims" && !trimItem)}
+            disabled={selectedItemIds.length === 0 || (type === "Trims" && !trimItem)}
             onClick={handleNext}
             className="bg-[#0453B8] hover:bg-blue-700 text-white font-bold px-6 py-2.5 h-auto text-sm shadow-sm transition-all disabled:opacity-50"
           >
-            Next: Enter {isTrim ? "Trim" : "Fabric"} Items <ArrowRight className="w-4 h-4 ml-2" />
+            Add Selected Items <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
       </DialogContent>

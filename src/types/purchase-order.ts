@@ -16,4 +16,10 @@ export interface POItem {
   images?: { name: string; url: string }[];
   code?: string; // Item code (mostly used for Trims)
   deliveryDate?: string;
+  productName?: string;
+  productImage?: string;
+  productCode?: string;
+  productFit?: string;
+  soNo?: string;
+  fabricImage?: string;
 }
