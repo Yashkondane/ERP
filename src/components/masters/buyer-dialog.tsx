@@ -32,6 +32,7 @@ export function BuyerDialog({ open, onOpenChange, initialData, onSave }: BuyerDi
           transport: "",
           creditTerms: "",
           defaultAgent: "",
+          defaultBrand: "",
           billingAddress: "",
           shippingAddress: "",
           logo: "",
@@ -136,13 +137,24 @@ export function BuyerDialog({ open, onOpenChange, initialData, onSave }: BuyerDi
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <Label className="text-xs font-bold text-slate-600">Agent by Default</Label>
-              <Input 
-                value={formData.defaultAgent || ""} 
-                onChange={(e) => handleChange("defaultAgent", e.target.value)} 
-                className="h-10 text-sm font-medium border-slate-200 focus-visible:ring-[#0453B8] text-slate-900 bg-white" 
-              />
+            <div className="grid grid-cols-2 gap-5">
+              <div className="flex flex-col gap-2">
+                <Label className="text-xs font-bold text-slate-600">Agent by Default</Label>
+                <Input 
+                  value={formData.defaultAgent || ""} 
+                  onChange={(e) => handleChange("defaultAgent", e.target.value)} 
+                  className="h-10 text-sm font-medium border-slate-200 focus-visible:ring-[#0453B8] text-slate-900 bg-white" 
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label className="text-xs font-bold text-slate-600">Default Brand</Label>
+                <Input 
+                  value={formData.defaultBrand || ""} 
+                  onChange={(e) => handleChange("defaultBrand", e.target.value)} 
+                  className="h-10 text-sm font-medium border-slate-200 focus-visible:ring-[#0453B8] text-slate-900 bg-white" 
+                  placeholder="e.g. Zara"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

@@ -53,7 +53,8 @@ export function PatternsCard() {
         <Table>
           <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
             <TableRow>
-              <TableHead className="w-[150px] font-semibold text-slate-600 px-6">Code</TableHead>
+              <TableHead className="w-[80px] px-6"></TableHead>
+              <TableHead className="w-[150px] font-semibold text-slate-600">Code</TableHead>
               <TableHead className="font-semibold text-slate-600">Brand Name</TableHead>
               <TableHead className="font-semibold text-slate-600">Description (Fit)</TableHead>
               <TableHead className="w-[120px] text-right font-semibold text-slate-600 px-6">Actions</TableHead>
@@ -62,14 +63,23 @@ export function PatternsCard() {
           <TableBody>
             {patterns.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="h-32 text-center text-slate-500">
+                <TableCell colSpan={5} className="h-32 text-center text-slate-500">
                   No patterns found. Add your first pattern!
                 </TableCell>
               </TableRow>
             ) : (
               patterns.map((pattern) => (
                 <TableRow key={pattern.code} className="hover:bg-slate-50/50 group transition-colors">
-                  <TableCell className="font-semibold text-slate-900 px-6 py-4">
+                  <TableCell className="px-6 py-3">
+                    <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden">
+                      {pattern.image ? (
+                        <img src={pattern.image} alt={pattern.code} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[10px] text-slate-400 font-medium text-center leading-tight">No<br/>Img</span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-semibold text-slate-900 py-4">
                     {pattern.code}
                   </TableCell>
                   <TableCell className="font-medium text-slate-700 py-4">

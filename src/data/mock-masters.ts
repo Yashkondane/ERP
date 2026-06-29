@@ -4,6 +4,7 @@ export interface MasterPattern {
   code: string;
   brand: string;
   fit: string;
+  image?: string;
 }
 
 export const INITIAL_MASTER_PATTERNS: MasterPattern[] = [
@@ -78,6 +79,7 @@ export interface MasterBuyer {
   transport: string;
   creditTerms: string;
   defaultAgent: string;
+  defaultBrand?: string;
   companyName: string;
   billingAddress: string;
   shippingAddress: string;
