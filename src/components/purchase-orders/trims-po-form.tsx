@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Trash2, Edit2, FileText, ArrowRight, Save, Plus, MapPin } from "lucide-react";
+import { ArrowLeft, Trash2, Edit2, FileText, ArrowRight, Save, Plus, MapPin, Link2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LinkSoLinesDialog, LinkedLine } from "./link-so-lines-dialog";
@@ -257,6 +257,7 @@ export function TrimsPurchaseOrderForm({ initialPo, isEditMode = false, isViewMo
                       <thead className="bg-slate-50 border-b border-slate-200">
                         <tr>
                           <th className="px-4 py-3 font-bold text-slate-600 text-center w-12">#</th>
+                          <th className="px-4 py-3 font-bold text-slate-600 text-center w-16">Image</th>
                           <th className="px-4 py-3 font-bold text-slate-600">Item Type</th>
                           <th className="px-4 py-3 font-bold text-slate-600">Description</th>
                           <th className="px-4 py-3 font-bold text-slate-600 text-center w-[120px]">Total Qty (Pcs)</th>
@@ -269,7 +270,7 @@ export function TrimsPurchaseOrderForm({ initialPo, isEditMode = false, isViewMo
                       <tbody className="divide-y divide-slate-100">
                         {trimItems.length === 0 ? (
                           <tr>
-                            <td colSpan={8} className="px-4 py-12 text-center text-slate-500 font-medium">
+                            <td colSpan={9} className="px-4 py-12 text-center text-slate-500 font-medium">
                               No trim items added yet. Click "+ Add Trim Item" to begin.
                             </td>
                           </tr>
@@ -282,6 +283,17 @@ export function TrimsPurchaseOrderForm({ initialPo, isEditMode = false, isViewMo
                             return (
                               <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="px-4 py-3 text-center font-bold text-slate-700">{idx + 1}</td>
+                                <td className="px-4 py-3">
+                                  <div className="w-10 h-10 rounded bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden">
+                                    {(item as any).image ? (
+                                      <img src={(item as any).image} alt="trim" className="w-full h-full object-cover" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                        <Plus className="w-4 h-4" />
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
                                 <td className="px-4 py-3">
                                   <Select value={item.itemType} onValueChange={(v) => handleUpdateTrim(item.id, 'itemType', v)} disabled={isViewMode}>
                                     <SelectTrigger className="h-9 border-slate-200 bg-white focus:ring-[#0453B8] shadow-sm">
@@ -350,12 +362,22 @@ export function TrimsPurchaseOrderForm({ initialPo, isEditMode = false, isViewMo
                                 {!isViewMode && (
                                   <td className="px-4 py-3 text-center">
                                     <div className="flex items-center justify-center gap-2">
-
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setActiveTrimIdForLinking(item.id)}
+                                        className="h-8 px-3 text-[#0453B8] hover:bg-blue-50 border-blue-200 font-bold"
+                                        title="Link SO Lines"
+                                      >
+                                        <Link2 className="w-3.5 h-3.5 mr-1.5" />
+                                        Link SO
+                                      </Button>
                                       <Button
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => handleDeleteTrim(item.id)}
                                         className="w-8 h-8 p-0 text-red-500 hover:bg-red-50 border border-transparent hover:border-red-200"
+                                        title="Delete Trim"
                                       >
                                         <Trash2 className="w-4 h-4" />
                                       </Button>

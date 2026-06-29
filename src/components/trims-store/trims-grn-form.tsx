@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Trash2, Plus, FileText, CheckCircle2, Paperclip, Edit2, Image as ImageIcon, Upload } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, FileText, CheckCircle2, Paperclip, Edit2, Link2, Image as ImageIcon, Upload } from "lucide-react";
 import Link from "next/link";
 import {
   Select,
@@ -20,33 +20,25 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { NotesPanel } from "@/components/sales-order/notes-panel";
-import { AttachmentsModal } from "@/components/sales-order/attachments-modal";
 import { useForm, FormProvider } from "react-hook-form";
 
-interface RollEntry {
+interface TrimEntry {
   id: string;
   srNo: number;
   image?: string;
+  itemType: string;
   description: string;
-  rollNo: string;
-  width: string;
-  gsm: string;
-  color: string;
-  fabricType: string;
-  mtrQty: number;
-  hsn: string;
+  qty: number;
   rate: number;
   gst: number;
   amount: number;
   poItemIds?: string[];
-  rollDetails?: { id: string, rollNo: string, mtrQty: number }[];
 }
 
-const INITIAL_SUPPLIERS = ["SALASAR FASHION", "ARVIND MILLS", "VARDHMAN TEXTILES"];
-const FABRIC_POS = ["PO-102 (01/06/2026)", "PO-103 (05/06/2026)"];
+const INITIAL_SUPPLIERS = ["ABC Buttons Ltd.", "YKK Zippers", "Super Labels", "Vardhman Threads"];
+const TRIMS_POS = ["TPO-8006 (13/06/2026)", "TPO-8005 (10/06/2026)"];
 
-export function FabricGrnForm() {
+export function TrimsGrnForm() {
   const methods = useForm({
     defaultValues: {
       notes: "",
@@ -59,9 +51,9 @@ export function FabricGrnForm() {
   const [poLoaded, setPoLoaded] = useState(false);
   
   const [poItems] = useState([
-    { id: "1", material: "ASTROFILL-016", width: "58", gsm: "250", color: "BLACK", type: "POLYESTER", hsn: "540752", rate: 175.00, gst: 5, orderedQty: 1000, balanceQty: 600, image: "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=100&q=80" },
-    { id: "2", material: "SHADOWMESH-220", width: "60", gsm: "220", color: "NAVY", type: "MESH", hsn: "540752", rate: 120.00, gst: 5, orderedQty: 500, balanceQty: 300, image: "https://images.unsplash.com/photo-1574634534894-89d7576c8259?w=100&q=80" },
-    { id: "3", material: "VELVOTEX-330", width: "62", gsm: "330", color: "GREY", type: "VELVET", hsn: "540752", rate: 150.00, gst: 5, orderedQty: 800, balanceQty: 800, image: "https://images.unsplash.com/photo-1542157585-ef20bbcce178?w=100&q=80" },
+    { id: "1", itemType: "Button", description: "4 Hole Plastic Button 18L", orderedQty: 5000, balanceQty: 5000, rate: 0.50, gst: 5, image: "https://images.unsplash.com/photo-1596708761408-543e06f15f02?w=100&q=80" },
+    { id: "2", itemType: "Main Label", description: "Woven Label 5x3cm", orderedQty: 2500, balanceQty: 1000, rate: 1.20, gst: 12, image: "https://images.unsplash.com/photo-1579758629938-03607ccdbaba?w=100&q=80" },
+    { id: "3", itemType: "Zipper", description: "5# Nylon Coil Zipper 15cm", orderedQty: 1000, balanceQty: 1000, rate: 5.50, gst: 18, image: "https://images.unsplash.com/photo-1578330752156-3c2fca5d09b2?w=100&q=80" },
   ]);
 
   const handleLoadPo = (selectedPo: string) => {
@@ -71,96 +63,33 @@ export function FabricGrnForm() {
   };
   
   const [showAddress, setShowAddress] = useState(true);
-  const [entries, setEntries] = useState<RollEntry[]>([]);
+  const [entries, setEntries] = useState<TrimEntry[]>([]);
 
   // Popup States
   const [isLoadPoItemsOpen, setIsLoadPoItemsOpen] = useState(false);
   const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
-  const [isRollDetailsOpen, setIsRollDetailsOpen] = useState(false);
-  const [activeRollEntryId, setActiveRollEntryId] = useState<string | null>(null);
-  const [activeRollDetails, setActiveRollDetails] = useState<{ id: string, rollNo: string, mtrQty: string }[]>([]);
 
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [manualFormData, setManualFormData] = useState({
-    description: "", rollNo: "", width: "", gsm: "", color: "", fabricType: "", mtrQty: "", hsn: "", rate: "", gst: "5", image: ""
+    itemType: "", description: "", qty: "", rate: "", gst: "5", image: ""
   });
 
   const [selectedPoItems, setSelectedPoItems] = useState<Record<string, boolean>>({});
-  const [combineLines, setCombineLines] = useState(false);
-
-  const [splitRollCount, setSplitRollCount] = useState("10");
-  const [splitTotalMeters, setSplitTotalMeters] = useState("1000");
-
-  const handleAutoSplit = () => {
-    const count = parseInt(splitRollCount) || 1;
-    const total = parseFloat(splitTotalMeters) || 0;
-    const mtrPerRoll = (total / count).toFixed(2);
-    
-    const newRolls = Array.from({ length: count }).map((_, idx) => ({
-      id: Math.random().toString(),
-      rollNo: `R-${(idx + 1).toString().padStart(2, '0')}`,
-      mtrQty: mtrPerRoll
-    }));
-    setActiveRollDetails(newRolls);
-  };
-
-  const handleOpenRollDetails = (entry: RollEntry) => {
-    setActiveRollEntryId(entry.id);
-    setSplitTotalMeters(entry.mtrQty ? entry.mtrQty.toString() : "1000");
-    if (entry.rollDetails && entry.rollDetails.length > 0) {
-      setActiveRollDetails(entry.rollDetails.map(r => ({ ...r, mtrQty: r.mtrQty.toString() })));
-    } else {
-      // Default to 1 roll
-      setActiveRollDetails([{ id: Math.random().toString(), rollNo: "R-01", mtrQty: entry.mtrQty ? entry.mtrQty.toString() : "" }]);
-    }
-    setIsRollDetailsOpen(true);
-  };
-
-  const handleSaveRollDetails = () => {
-    if (!activeRollEntryId) return;
-    
-    const validRolls = activeRollDetails.map((r, idx) => ({
-      ...r,
-      rollNo: r.rollNo || `R-${(idx + 1).toString().padStart(2, '0')}`,
-      mtrQty: Number(r.mtrQty) || 0
-    }));
-    
-    const totalMeters = validRolls.reduce((acc, curr) => acc + curr.mtrQty, 0);
-    
-    setEntries(entries.map(e => {
-      if (e.id === activeRollEntryId) {
-        const amount = totalMeters * e.rate;
-        return {
-          ...e,
-          rollDetails: validRolls,
-          mtrQty: totalMeters,
-          amount
-        };
-      }
-      return e;
-    }));
-    setIsRollDetailsOpen(false);
-  };
 
   const handleOpenManualEntry = () => {
     setEditingEntryId(null);
     setManualFormData({
-      description: "", rollNo: "", width: "", gsm: "", color: "", fabricType: "", mtrQty: "", hsn: "", rate: "", gst: "5", image: ""
+      itemType: "", description: "", qty: "", rate: "", gst: "5", image: ""
     });
     setIsManualEntryOpen(true);
   };
 
-  const handleEditEntry = (entry: RollEntry) => {
+  const handleEditEntry = (entry: TrimEntry) => {
     setEditingEntryId(entry.id);
     setManualFormData({
+      itemType: entry.itemType,
       description: entry.description,
-      rollNo: entry.rollNo,
-      width: entry.width,
-      gsm: entry.gsm,
-      color: entry.color,
-      fabricType: entry.fabricType,
-      mtrQty: entry.mtrQty.toString(),
-      hsn: entry.hsn,
+      qty: entry.qty.toString(),
       rate: entry.rate.toString(),
       gst: entry.gst.toString(),
       image: entry.image || ""
@@ -169,7 +98,7 @@ export function FabricGrnForm() {
   };
 
   const handleSaveManualEntry = () => {
-    const mtrQty = Number(manualFormData.mtrQty) || 0;
+    const qty = Number(manualFormData.qty) || 0;
     const rate = Number(manualFormData.rate) || 0;
     const gst = Number(manualFormData.gst) || 5;
 
@@ -177,27 +106,22 @@ export function FabricGrnForm() {
       setEntries(entries.map(e => e.id === editingEntryId ? {
         ...e,
         ...manualFormData,
-        mtrQty,
+        qty,
         rate,
         gst,
-        amount: mtrQty * rate,
+        amount: qty * rate,
         image: manualFormData.image
       } : e));
     } else {
-      const row: RollEntry = {
+      const row: TrimEntry = {
         id: Math.random().toString(),
         srNo: entries.length + 1,
+        itemType: manualFormData.itemType,
         description: manualFormData.description,
-        rollNo: manualFormData.rollNo,
-        width: manualFormData.width,
-        gsm: manualFormData.gsm,
-        color: manualFormData.color,
-        fabricType: manualFormData.fabricType,
-        mtrQty,
-        hsn: manualFormData.hsn,
+        qty,
         rate,
         gst,
-        amount: mtrQty * rate,
+        amount: qty * rate,
         image: manualFormData.image,
       };
       setEntries([...entries, row]);
@@ -211,68 +135,25 @@ export function FabricGrnForm() {
 
     if (selectedItems.length === 0) return;
 
-    if (combineLines && selectedItems.length > 0) {
-      const combinedQty = selectedItems.reduce((acc, curr) => acc + (curr.balanceQty || 0), 0);
-      const combinedDesc = selectedItems.map(i => i.material).join(" + ");
-      const firstItem = selectedItems[0];
-      
-      const newRow: RollEntry = {
+    const newRows = selectedItems.map((item, index) => {
+      const qty = item.balanceQty || 0;
+      return {
         id: Math.random().toString(),
-        srNo: entries.length + 1,
-        description: combinedDesc,
-        rollNo: "",
-        width: firstItem.width,
-        gsm: firstItem.gsm,
-        color: Array.from(new Set(selectedItems.map(i => i.color))).join("/"),
-        fabricType: firstItem.type,
-        mtrQty: combinedQty,
-        hsn: firstItem.hsn,
-        rate: firstItem.rate,
-        gst: firstItem.gst,
-        amount: combinedQty * firstItem.rate,
-        poItemIds: selectedItems.map(i => i.id),
-        image: firstItem.image,
+        srNo: entries.length + index + 1,
+        itemType: item.itemType,
+        description: item.description,
+        qty: qty,
+        rate: item.rate,
+        gst: item.gst,
+        amount: qty * item.rate,
+        poItemIds: [item.id],
+        image: item.image,
       };
-      setEntries([...entries, newRow]);
-    } else {
-      const newRows = selectedItems.map((item, index) => {
-        const qty = item.balanceQty || 0;
-        return {
-          id: Math.random().toString(),
-          srNo: entries.length + index + 1,
-          description: item.material,
-          rollNo: "",
-          width: item.width,
-          gsm: item.gsm,
-          color: item.color,
-          fabricType: item.type,
-          mtrQty: qty,
-          hsn: item.hsn,
-          rate: item.rate,
-          gst: item.gst,
-          amount: qty * item.rate,
-          poItemIds: [item.id],
-          image: item.image,
-        };
-      });
-      setEntries([...entries, ...newRows]);
-    }
+    });
+    setEntries([...entries, ...newRows]);
     
     setIsLoadPoItemsOpen(false);
     setSelectedPoItems({});
-  };
-
-  const updateEntry = (id: string, field: keyof RollEntry, value: any) => {
-    setEntries(entries.map(entry => {
-      if (entry.id === id) {
-        const updated = { ...entry, [field]: value };
-        if (field === 'mtrQty' || field === 'rate') {
-          updated.amount = Number(updated.mtrQty) * Number(updated.rate);
-        }
-        return updated;
-      }
-      return entry;
-    }));
   };
 
   const removeEntry = (id: string) => {
@@ -280,7 +161,7 @@ export function FabricGrnForm() {
     setEntries(newEntries);
   };
 
-  const totalMeters = entries.reduce((acc, curr) => acc + (Number(curr.mtrQty) || 0), 0);
+  const totalItems = entries.reduce((acc, curr) => acc + (Number(curr.qty) || 0), 0);
   const subTotal = entries.reduce((acc, curr) => acc + curr.amount, 0);
   const totalGstAmount = entries.reduce((acc, curr) => acc + (curr.amount * (Number(curr.gst) || 0) / 100), 0);
   const grandTotal = subTotal + totalGstAmount;
@@ -293,14 +174,14 @@ export function FabricGrnForm() {
         <div className="flex flex-col mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Link href="/fabric-store" className="p-2 bg-white hover:bg-slate-50 rounded-full border border-slate-200 text-slate-500 hover:text-[#0453B8] transition-colors">
+              <Link href="/trims-store" className="p-2 bg-white hover:bg-slate-50 rounded-full border border-slate-200 text-slate-500 hover:text-[#0453B8] transition-colors">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <div className="p-2 bg-slate-50 rounded-full border border-slate-100 flex items-center justify-center w-10 h-10 text-blue-600 shrink-0">
                 <FileText className="w-5 h-5" />
               </div>
               <h1 className="text-xl font-bold text-slate-900">
-                New Fabric GRN
+                New Trims GRN
               </h1>
             </div>
 
@@ -308,7 +189,7 @@ export function FabricGrnForm() {
               <div className="flex flex-col gap-1.5">
                 <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">GRN Date</Label>
                 <div className="flex items-center border border-slate-200 rounded-md bg-white px-3 h-9 text-sm font-medium text-slate-700 min-w-[140px]">
-                  15-Jun-2026
+                  16-Jun-2026
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">
@@ -349,13 +230,13 @@ export function FabricGrnForm() {
                 </div>
                 
                 <div className="flex flex-col gap-2">
-                  <Label className="text-xs font-bold text-slate-600">Fabric PO <span className="text-red-500">*</span></Label>
+                  <Label className="text-xs font-bold text-slate-600">Trims PO <span className="text-red-500">*</span></Label>
                   <Select value={po} onValueChange={(val) => { setPo(val); handleLoadPo(val); }}>
                     <SelectTrigger className="w-full h-10 border-slate-200 text-sm focus:ring-[#0453B8] bg-white font-medium">
                       <SelectValue placeholder="Select PO" />
                     </SelectTrigger>
                     <SelectContent>
-                      {FABRIC_POS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                      {TRIMS_POS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -401,7 +282,7 @@ export function FabricGrnForm() {
                 
                 {showAddress && supplier && (
                   <div className="px-4 pb-4 pl-[3.25rem] text-sm text-slate-600">
-                    <p>123, Ring Road, Surat - 395002, Gujarat, India</p>
+                    <p>15, Mangaldas Road, Lohar Chawl, Mumbai - 400002, Maharashtra, India</p>
                   </div>
                 )}
               </div>
@@ -414,33 +295,33 @@ export function FabricGrnForm() {
                 <div className="grid grid-cols-5 gap-4 text-center divide-x divide-slate-200">
                   <div className="flex flex-col gap-1.5 px-2">
                     <span className="text-[11px] font-bold text-slate-700">Ordered Qty</span>
-                    <span className="text-lg font-black text-slate-900">{po ? '1,000.00' : '0.00'} <span className="text-[10px] font-bold text-slate-400">Mtr</span></span>
+                    <span className="text-lg font-black text-slate-900">{po ? '8,500' : '0'} <span className="text-[10px] font-bold text-slate-400">Pcs</span></span>
                   </div>
                   <div className="flex flex-col gap-1.5 px-2">
                     <span className="text-[11px] font-bold text-slate-700">Previously Received</span>
-                    <span className="text-lg font-black text-slate-900">{po ? '400.00' : '0.00'} <span className="text-[10px] font-bold text-slate-400">Mtr</span></span>
+                    <span className="text-lg font-black text-slate-900">{po ? '1,500' : '0'} <span className="text-[10px] font-bold text-slate-400">Pcs</span></span>
                   </div>
                   <div className="flex flex-col gap-1.5 px-2">
                     <span className="text-[11px] font-bold text-[#0453B8]">Current Received</span>
-                    <span className="text-lg font-black text-[#0453B8]">{totalMeters.toFixed(2)} <span className="text-[10px] font-bold text-slate-400">Mtr</span></span>
+                    <span className="text-lg font-black text-[#0453B8]">{totalItems.toLocaleString()} <span className="text-[10px] font-bold text-slate-400">Pcs</span></span>
                   </div>
                   <div className="flex flex-col gap-1.5 px-2">
                     <span className="text-[11px] font-bold text-emerald-600">Total Received</span>
-                    <span className="text-lg font-black text-emerald-600">{po ? (400 + totalMeters).toFixed(2) : totalMeters.toFixed(2)} <span className="text-[10px] font-bold text-slate-400">Mtr</span></span>
+                    <span className="text-lg font-black text-emerald-600">{po ? (1500 + totalItems).toLocaleString() : totalItems.toLocaleString()} <span className="text-[10px] font-bold text-slate-400">Pcs</span></span>
                   </div>
                   <div className="flex flex-col gap-1.5 px-2">
                     <span className="text-[11px] font-bold text-red-500">Balance Qty</span>
-                    <span className="text-lg font-black text-red-500">{po ? (1000 - (400 + totalMeters)).toFixed(2) : '0.00'} <span className="text-[10px] font-bold text-slate-400">Mtr</span></span>
+                    <span className="text-lg font-black text-red-500">{po ? (8500 - (1500 + totalItems)).toLocaleString() : '0'} <span className="text-[10px] font-bold text-slate-400">Pcs</span></span>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* 4. Roll Wise Entry Table */}
+            {/* 3. Trims Receiving Entry Table */}
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col overflow-hidden mb-5">
               <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-sm font-bold text-[#0453B8]">3. Fabric Receiving Entry</h2>
+                  <h2 className="text-sm font-bold text-[#0453B8]">3. Trims Receiving Entry</h2>
                 </div>
                 <div className="flex items-center gap-3">
                   <Button onClick={() => setIsLoadPoItemsOpen(true)} disabled={!poLoaded} variant="outline" className="h-8 px-3 text-[#0453B8] border-blue-200 hover:bg-blue-50 font-semibold text-xs bg-white shadow-sm">
@@ -449,21 +330,21 @@ export function FabricGrnForm() {
                   </Button>
                   <Button onClick={handleOpenManualEntry} disabled={!poLoaded} className="h-8 px-3 text-[#00A86B] border-[#00A86B]/30 hover:bg-[#00A86B]/10 font-semibold text-xs bg-white shadow-sm border">
                     <Plus className="w-3.5 h-3.5 mr-1.5" />
-                    Manual Fabric
+                    Manual Entry
                   </Button>
                 </div>
               </div>
               
               <div className="overflow-x-auto w-full custom-scrollbar">
-                <Table className="min-w-[1200px]">
+                <Table className="min-w-[1000px]">
                   <TableHeader className="bg-slate-50">
                     <TableRow>
                       <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2 w-12">Sr</TableHead>
                       <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2 w-16">Image</TableHead>
-                      <TableHead className="text-slate-700 text-[11px] font-bold py-2.5 px-2">Description <span className="text-red-500">*</span> <span className="inline-block w-3.5 h-3.5 rounded-full border border-blue-400 text-blue-500 text-[9px] text-center leading-[12px] font-bold ml-1 cursor-help">i</span></TableHead>
-                      <TableHead className="text-slate-700 text-[11px] font-bold py-2.5 px-2 w-24 text-center">Rolls <span className="text-red-500">*</span></TableHead>
-                      <TableHead className="text-slate-700 text-[11px] font-bold py-2.5 px-2 w-28 text-center">Mtr Qty <span className="text-red-500">*</span></TableHead>
-                      <TableHead className="text-slate-700 text-[11px] font-bold py-2.5 px-2 w-28 text-center">Rate (₹/Mtr) <span className="text-red-500">*</span></TableHead>
+                      <TableHead className="text-slate-700 text-[11px] font-bold py-2.5 px-2 w-48">Item Type <span className="text-red-500">*</span></TableHead>
+                      <TableHead className="text-slate-700 text-[11px] font-bold py-2.5 px-2">Description <span className="text-red-500">*</span></TableHead>
+                      <TableHead className="text-slate-700 text-[11px] font-bold py-2.5 px-2 w-32 text-center">Qty (Pcs) <span className="text-red-500">*</span></TableHead>
+                      <TableHead className="text-slate-700 text-[11px] font-bold py-2.5 px-2 w-28 text-center">Rate (₹) <span className="text-red-500">*</span></TableHead>
                       <TableHead className="text-slate-700 text-[11px] font-bold py-2.5 px-2 w-24 text-center">GST % <span className="text-red-500">*</span></TableHead>
                       <TableHead className="text-slate-700 text-[11px] font-bold py-2.5 px-2 w-28 text-right">Amount (₹)</TableHead>
                       <TableHead className="text-slate-700 text-[11px] font-bold py-2.5 px-2 w-16 text-center">Action</TableHead>
@@ -472,14 +353,14 @@ export function FabricGrnForm() {
                   <TableBody className="text-sm">
                     {!poLoaded ? (
                       <TableRow>
-                        <TableCell colSpan={13} className="text-center py-12 text-slate-400 font-medium bg-slate-50/50">
-                          Please load a Fabric PO first to enter rolls.
+                        <TableCell colSpan={9} className="text-center py-12 text-slate-400 font-medium bg-slate-50/50">
+                          Please load a Trims PO first to enter items.
                         </TableCell>
                       </TableRow>
                     ) : entries.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={13} className="text-center py-8 text-slate-400 font-medium">
-                          No rolls added yet. Use the quick add row below to enter rolls.
+                        <TableCell colSpan={9} className="text-center py-8 text-slate-400 font-medium">
+                          No items added yet. Use "Load PO Items" to enter quantities.
                         </TableCell>
                       </TableRow>
                     ) : null}
@@ -503,34 +384,16 @@ export function FabricGrnForm() {
                           )}
                         </TableCell>
                         <TableCell className="py-3 px-2">
-                          <div className="font-bold text-slate-800 text-sm uppercase mb-1">{entry.description || "-"}</div>
-                          {(entry.width || entry.gsm || entry.color || entry.fabricType) ? (
-                            <p className="text-[10px] text-slate-500 font-medium">
-                              {[
-                                entry.width ? `${entry.width}"` : null,
-                                entry.gsm ? `${entry.gsm} GSM` : null,
-                                entry.color,
-                                entry.fabricType
-                              ].filter(Boolean).join(" • ")}
-                            </p>
-                          ) : (
-                            <p className="text-[10px] text-slate-400 font-medium">(Width, GSM, Color, Fabric Type will appear here after save)</p>
-                          )}
+                          <div className="font-bold text-slate-800 text-sm uppercase">{entry.itemType}</div>
+                        </TableCell>
+                        <TableCell className="py-3 px-2">
+                          <div className="font-medium text-slate-700 text-sm">{entry.description || "-"}</div>
                         </TableCell>
                         <TableCell className="py-3 px-2 text-center">
-                          <Button 
-                            onClick={(e) => { e.stopPropagation(); handleOpenRollDetails(entry); }}
-                            className="bg-blue-50 hover:bg-blue-100 text-[#0453B8] border border-blue-200 h-8 px-4 text-xs font-bold rounded"
-                            variant="outline"
-                          >
-                            {entry.rollDetails ? entry.rollDetails.length : (entry.mtrQty > 0 ? 1 : 0)} Rolls
-                          </Button>
+                          <div className="text-sm font-bold text-[#0453B8]">{entry.qty} <span className="text-[10px] text-slate-400 ml-0.5">Pcs</span></div>
                         </TableCell>
                         <TableCell className="py-3 px-2 text-center">
-                          <div className="text-sm font-bold text-slate-700">{entry.mtrQty} <span className="text-[10px] text-slate-400 ml-0.5">Mtr</span></div>
-                        </TableCell>
-                        <TableCell className="py-3 px-2 text-center">
-                          <div className="text-sm font-bold text-slate-700">₹ {entry.rate}</div>
+                          <div className="text-sm font-bold text-slate-700">₹ {entry.rate.toFixed(2)}</div>
                         </TableCell>
                         <TableCell className="py-3 px-2 text-center">
                           <div className="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-1 rounded w-fit mx-auto">{entry.gst}%</div>
@@ -555,11 +418,11 @@ export function FabricGrnForm() {
               </div>
               <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
                 <div className="text-sm font-bold text-slate-700">
-                  Total Items: {entries.length}
+                  Total Varieties: {entries.length}
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="text-sm font-bold text-slate-700">Total Qty:</div>
-                  <div className="text-sm font-black text-slate-900">{totalMeters.toFixed(2)} Mtr</div>
+                  <div className="text-sm font-black text-slate-900">{totalItems.toLocaleString()} Pcs</div>
                 </div>
               </div>
             </div>
@@ -587,7 +450,7 @@ export function FabricGrnForm() {
             <div className="flex flex-col gap-2">
               <Label className="text-[11px] font-bold text-slate-900">Notes</Label>
               <textarea
-                placeholder="Add any internal notes or special instructions for this order..."
+                placeholder="Add any internal notes or special instructions for this receipt..."
                 className="w-full min-h-[120px] resize-none border border-slate-200 rounded-xl p-4 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm"
               />
             </div>
@@ -661,7 +524,7 @@ export function FabricGrnForm() {
 
       {/* Sticky Action Footer */}
       <div className="flex-shrink-0 bg-white border-t border-slate-200 px-6 py-4 flex items-center justify-end gap-3 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-10">
-        <Link href="/fabric-store">
+        <Link href="/trims-store">
           <Button variant="ghost" className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium h-10 px-6">
             Cancel
           </Button>
@@ -682,7 +545,7 @@ export function FabricGrnForm() {
             <DialogTitle className="text-base font-bold text-slate-800">Load PO Items</DialogTitle>
           </DialogHeader>
           <div className="px-5 py-3 overflow-y-auto flex-1">
-            <p className="text-sm font-medium text-slate-600 mb-4">Select Items from PO: PO-102 (01/06/2026)</p>
+            <p className="text-sm font-medium text-slate-600 mb-4">Select Items from PO: TPO-8006 (13/06/2026)</p>
             <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
               <Table>
                 <TableHeader className="bg-slate-50">
@@ -706,13 +569,10 @@ export function FabricGrnForm() {
                         }}
                       />
                     </TableHead>
-                    <TableHead className="py-3 font-bold text-slate-700 text-xs">Item Description</TableHead>
-                    <TableHead className="py-3 font-bold text-slate-700 text-xs text-center">Width (Inch)</TableHead>
-                    <TableHead className="py-3 font-bold text-slate-700 text-xs text-center">GSM</TableHead>
-                    <TableHead className="py-3 font-bold text-slate-700 text-xs">Color</TableHead>
-                    <TableHead className="py-3 font-bold text-slate-700 text-xs">Fabric Type</TableHead>
-                    <TableHead className="py-3 font-bold text-slate-700 text-xs text-right">Ordered (Mtr)</TableHead>
-                    <TableHead className="py-3 font-bold text-slate-700 text-xs text-right">Balance (Mtr)</TableHead>
+                    <TableHead className="py-3 font-bold text-slate-700 text-xs w-48">Item Type</TableHead>
+                    <TableHead className="py-3 font-bold text-slate-700 text-xs">Description</TableHead>
+                    <TableHead className="py-3 font-bold text-slate-700 text-xs text-right">Ordered (Pcs)</TableHead>
+                    <TableHead className="py-3 font-bold text-slate-700 text-xs text-right">Balance (Pcs)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -731,33 +591,24 @@ export function FabricGrnForm() {
                       </TableCell>
                       <TableCell className="py-3">
                         <div className="font-semibold text-slate-700 text-xs uppercase flex items-center gap-2">
-                          {item.material}
+                          {item.itemType}
                           {isAdded && <span className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 text-[9px] font-bold">ADDED</span>}
                         </div>
                       </TableCell>
-                      <TableCell className="py-3 text-xs text-slate-600 text-center font-medium">
-                        {item.width}
-                      </TableCell>
-                      <TableCell className="py-3 text-xs text-slate-600 text-center font-medium">
-                        {item.gsm}
-                      </TableCell>
-                      <TableCell className="py-3 text-xs text-slate-600 font-medium uppercase">
-                        {item.color}
-                      </TableCell>
-                      <TableCell className="py-3 text-xs text-slate-600 font-medium uppercase">
-                        {item.type}
+                      <TableCell className="py-3 text-xs text-slate-600 font-medium">
+                        {item.description}
                       </TableCell>
                       <TableCell className="py-3 text-xs font-semibold text-slate-700 text-right">
-                        {item.orderedQty?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        {item.orderedQty?.toLocaleString()}
                       </TableCell>
                       <TableCell className="py-3 text-xs font-semibold text-slate-700 text-right">
-                        {item.balanceQty?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        {item.balanceQty?.toLocaleString()}
                       </TableCell>
                     </TableRow>
                   )})}
                   {poItems.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-slate-400">No items available</TableCell>
+                      <TableCell colSpan={5} className="text-center py-8 text-slate-400">No items available</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -769,29 +620,6 @@ export function FabricGrnForm() {
                 <span className="text-sm font-bold text-slate-800">
                   Selected Items: {Object.values(selectedPoItems).filter(Boolean).length}
                 </span>
-                
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="combineLines" 
-                      className="text-[#0453B8] focus:ring-[#0453B8]"
-                      checked={combineLines}
-                      onChange={() => setCombineLines(true)}
-                    />
-                    <span className="text-sm text-slate-600 font-medium">Add both in one line</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="combineLines" 
-                      className="text-[#0453B8] focus:ring-[#0453B8]"
-                      checked={!combineLines}
-                      onChange={() => setCombineLines(false)}
-                    />
-                    <span className="text-sm text-slate-600 font-medium">Add in different lines</span>
-                  </label>
-                </div>
               </div>
               
               <div className="flex items-center gap-3">
@@ -809,13 +637,14 @@ export function FabricGrnForm() {
 
       {/* Manual / Edit Entry Dialog */}
       <Dialog open={isManualEntryOpen} onOpenChange={setIsManualEntryOpen}>
-        <DialogContent className="sm:max-w-2xl max-w-[95vw] w-full max-h-[90vh] overflow-y-auto bg-white p-6">
+        <DialogContent className="sm:max-w-xl max-w-[95vw] w-full max-h-[90vh] overflow-y-auto bg-white p-6">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-4">
-              {editingEntryId ? "Edit Fabric Details" : "Add Manual Fabric"}
+              {editingEntryId ? "Edit Item Details" : "Add Manual Item"}
             </DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 mt-2">
+            
             <div className="col-span-2 flex items-center gap-4 p-4 border border-slate-200 rounded-lg bg-slate-50">
               <div className="w-16 h-16 rounded-md bg-white border border-slate-300 flex items-center justify-center overflow-hidden shrink-0">
                 {manualFormData.image ? (
@@ -829,7 +658,7 @@ export function FabricGrnForm() {
                 )}
               </div>
               <div className="flex flex-col gap-2 flex-1">
-                <Label className="text-xs font-bold text-slate-700">Fabric Image (Optional)</Label>
+                <Label className="text-xs font-bold text-slate-700">Trim Image (Optional)</Label>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" className="h-8 text-xs font-semibold bg-white border-slate-200" onClick={() => setManualFormData({...manualFormData, image: "uploaded.png"})}>
                     <Upload className="w-3 h-3 mr-1.5 text-slate-500" /> Upload Image
@@ -844,104 +673,59 @@ export function FabricGrnForm() {
             </div>
 
             <div className="col-span-2 flex flex-col gap-1.5">
+              <Label className="text-xs font-bold text-slate-700">Item Type <span className="text-red-500">*</span></Label>
+              <Select value={manualFormData.itemType} onValueChange={(val) => setManualFormData({...manualFormData, itemType: val})}>
+                <SelectTrigger className="h-9 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#0453B8]">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Button">Button</SelectItem>
+                  <SelectItem value="Main Label">Main Label</SelectItem>
+                  <SelectItem value="Care Label">Care Label</SelectItem>
+                  <SelectItem value="Hang Tag">Hang Tag</SelectItem>
+                  <SelectItem value="Zipper">Zipper</SelectItem>
+                  <SelectItem value="Thread">Thread</SelectItem>
+                  <SelectItem value="Packing Box">Packing Box</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="col-span-2 flex flex-col gap-1.5">
               <Label className="text-xs font-bold text-slate-700">Description <span className="text-red-500">*</span></Label>
               <Input 
                 value={manualFormData.description} 
                 onChange={(e) => setManualFormData({...manualFormData, description: e.target.value})} 
-                placeholder="Enter fabric description"
+                placeholder="Enter item description"
                 className="h-9 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#0453B8]"
               />
             </div>
             
             <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-bold text-slate-700">Roll/Bale No</Label>
+              <Label className="text-xs font-bold text-slate-700">Qty (Pcs) <span className="text-red-500">*</span></Label>
               <Input 
-                value={manualFormData.rollNo} 
-                onChange={(e) => setManualFormData({...manualFormData, rollNo: e.target.value})} 
-                placeholder="Enter roll no"
+                type="number"
+                value={manualFormData.qty} 
+                onChange={(e) => setManualFormData({...manualFormData, qty: e.target.value})} 
+                placeholder="0"
                 className="h-9 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#0453B8]"
               />
             </div>
-            
+
             <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-bold text-slate-700">Fabric Type</Label>
-              <Input 
-                value={manualFormData.fabricType} 
-                onChange={(e) => setManualFormData({...manualFormData, fabricType: e.target.value})} 
-                placeholder="e.g. COTTON, POLYESTER"
-                className="h-9 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#0453B8]"
-              />
-            </div>
-            
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-bold text-slate-700">Width</Label>
-              <Input 
-                value={manualFormData.width} 
-                onChange={(e) => setManualFormData({...manualFormData, width: e.target.value})} 
-                placeholder='e.g. 44"'
-                className="h-9 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#0453B8]"
-              />
-            </div>
-            
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-bold text-slate-700">GSM</Label>
-              <Input 
-                value={manualFormData.gsm} 
-                onChange={(e) => setManualFormData({...manualFormData, gsm: e.target.value})} 
-                placeholder="e.g. 180"
-                className="h-9 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#0453B8]"
-              />
-            </div>
-            
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-bold text-slate-700">Color</Label>
-              <Input 
-                value={manualFormData.color} 
-                onChange={(e) => setManualFormData({...manualFormData, color: e.target.value})} 
-                placeholder="e.g. GREY"
-                className="h-9 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#0453B8]"
-              />
-            </div>
-            
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-bold text-slate-700">HSN Code</Label>
-              <Input 
-                value={manualFormData.hsn} 
-                onChange={(e) => setManualFormData({...manualFormData, hsn: e.target.value})} 
-                placeholder="e.g. 5208"
-                className="h-9 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#0453B8]"
-              />
-            </div>
-            
-            <div className="flex flex-col gap-1.5 relative">
-              <Label className="text-xs font-bold text-slate-700">Mtr Qty <span className="text-red-500">*</span></Label>
-              <div className="relative">
-                <Input 
-                  type="number"
-                  value={manualFormData.mtrQty} 
-                  onChange={(e) => setManualFormData({...manualFormData, mtrQty: e.target.value})} 
-                  placeholder="Enter qty"
-                  className="h-9 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#0453B8] pr-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">Mtr</span>
-              </div>
-            </div>
-            
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-bold text-slate-700">Rate (₹/Mtr) <span className="text-red-500">*</span></Label>
+              <Label className="text-xs font-bold text-slate-700">Rate (₹) <span className="text-red-500">*</span></Label>
               <Input 
                 type="number"
                 value={manualFormData.rate} 
                 onChange={(e) => setManualFormData({...manualFormData, rate: e.target.value})} 
-                placeholder="Enter rate"
-                className="h-9 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#0453B8] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                placeholder="0.00"
+                className="h-9 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#0453B8]"
               />
             </div>
             
-            <div className="col-span-2 flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-bold text-slate-700">GST % <span className="text-red-500">*</span></Label>
-              <Select value={manualFormData.gst} onValueChange={(v) => setManualFormData({...manualFormData, gst: v})}>
-                <SelectTrigger className="h-9 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#0453B8] w-full max-w-[200px]">
+              <Select value={manualFormData.gst} onValueChange={(val) => setManualFormData({...manualFormData, gst: val})}>
+                <SelectTrigger className="h-9 border-slate-200 focus-visible:ring-1 focus-visible:ring-[#0453B8]">
                   <SelectValue placeholder="Select GST" />
                 </SelectTrigger>
                 <SelectContent>
@@ -949,135 +733,24 @@ export function FabricGrnForm() {
                   <SelectItem value="5">5%</SelectItem>
                   <SelectItem value="12">12%</SelectItem>
                   <SelectItem value="18">18%</SelectItem>
+                  <SelectItem value="28">28%</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-            <Button variant="ghost" onClick={() => setIsManualEntryOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveManualEntry} disabled={!manualFormData.description} className="bg-[#0453B8] hover:bg-blue-700 text-white shadow-sm px-6">
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              Save Details
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Roll Details Dialog */}
-      <Dialog open={isRollDetailsOpen} onOpenChange={setIsRollDetailsOpen}>
-        <DialogContent className="sm:max-w-xl max-w-[95vw] w-full bg-white p-0 overflow-hidden">
-          <DialogHeader className="px-5 py-4 border-b border-slate-100 flex flex-row items-center justify-between">
-            <DialogTitle className="text-base font-bold text-slate-800">
-              Roll Wise Meter Entry {activeRollEntryId ? `- ${entries.find(e => e.id === activeRollEntryId)?.description}` : ''}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="px-5 py-4 overflow-y-auto h-[320px] custom-scrollbar">
-            <Table>
-              <TableHeader className="bg-slate-50">
-                <TableRow>
-                  <TableHead className="w-12 text-center py-2.5 text-xs font-bold text-slate-700">Sr</TableHead>
-                  <TableHead className="py-2.5 text-xs font-bold text-slate-700">Roll No.</TableHead>
-                  <TableHead className="w-32 py-2.5 text-xs font-bold text-slate-700 text-right">Meter (Mtr) <span className="text-red-500">*</span></TableHead>
-                  <TableHead className="w-12 py-2.5"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {activeRollDetails.map((roll, idx) => (
-                  <TableRow key={roll.id}>
-                    <TableCell className="text-center font-semibold text-slate-600 text-xs py-2">{idx + 1}</TableCell>
-                    <TableCell className="py-2">
-                      <Input 
-                        value={roll.rollNo}
-                        onChange={(e) => {
-                          const newDetails = [...activeRollDetails];
-                          newDetails[idx].rollNo = e.target.value;
-                          setActiveRollDetails(newDetails);
-                        }}
-                        className="h-8 text-xs border-slate-200"
-                        placeholder={`R-${(idx + 1).toString().padStart(2, '0')}`}
-                      />
-                    </TableCell>
-                    <TableCell className="py-2">
-                      <Input 
-                        type="number"
-                        value={roll.mtrQty}
-                        onChange={(e) => {
-                          const newDetails = [...activeRollDetails];
-                          newDetails[idx].mtrQty = e.target.value;
-                          setActiveRollDetails(newDetails);
-                        }}
-                        className="h-8 text-xs text-right border-slate-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        placeholder="0.00"
-                      />
-                    </TableCell>
-                    <TableCell className="py-2 text-center">
-                      <button 
-                        onClick={() => {
-                          const newDetails = activeRollDetails.filter((_, i) => i !== idx);
-                          setActiveRollDetails(newDetails);
-                        }}
-                        className="text-red-500 hover:text-red-700 p-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            
-            <div className="mt-5 mb-2 flex flex-wrap items-center justify-between gap-3 p-3 bg-blue-50/50 border border-blue-100 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col gap-1">
-                  <Label className="text-[10px] font-bold text-slate-500 uppercase">Target Total (Mtr)</Label>
-                  <Input 
-                    type="number"
-                    value={splitTotalMeters}
-                    onChange={(e) => setSplitTotalMeters(e.target.value)}
-                    className="h-8 w-24 text-xs font-bold bg-white"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label className="text-[10px] font-bold text-slate-500 uppercase">Split Into Rolls</Label>
-                  <Input 
-                    type="number"
-                    value={splitRollCount}
-                    onChange={(e) => setSplitRollCount(e.target.value)}
-                    className="h-8 w-24 text-xs font-bold bg-white"
-                  />
-                </div>
-                <div className="flex flex-col gap-1 justify-end h-full mt-auto pb-0.5">
-                  <Button onClick={handleAutoSplit} className="h-8 text-xs font-bold bg-[#0453B8] hover:bg-blue-700 text-white px-3 shadow-sm">
-                    Auto-Split
-                  </Button>
-                </div>
-              </div>
-              <Button 
-                onClick={() => {
-                  setActiveRollDetails([
-                    ...activeRollDetails, 
-                    { id: Math.random().toString(), rollNo: `R-${(activeRollDetails.length + 1).toString().padStart(2, '0')}`, mtrQty: "" }
-                  ]);
-                }}
-                variant="outline" 
-                className="h-8 text-xs font-semibold text-[#0453B8] border-blue-200 bg-blue-50/50 hover:bg-blue-50"
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" /> Add Roll
-              </Button>
-            </div>
           </div>
           
-          <div className="bg-slate-50 px-5 py-4 border-t border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-[#0453B8]">Total Meter</span>
-              <span className="text-sm font-bold text-[#0453B8]">
-                {activeRollDetails.reduce((acc, curr) => acc + (Number(curr.mtrQty) || 0), 0).toFixed(2)} Mtr
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={() => setIsRollDetailsOpen(false)} className="h-9 px-4 text-sm">Cancel</Button>
-              <Button onClick={handleSaveRollDetails} className="bg-[#0453B8] hover:bg-blue-700 text-white h-9 px-4 text-sm">Save Roll Details</Button>
-            </div>
+          <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <Button variant="outline" onClick={() => setIsManualEntryOpen(false)} className="h-9 px-4 text-slate-700 font-medium border-slate-200">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveManualEntry} 
+              disabled={!manualFormData.itemType || !manualFormData.description || !manualFormData.qty || !manualFormData.rate}
+              className="h-9 px-4 bg-[#0453B8] hover:bg-blue-700 text-white font-medium"
+            >
+              {editingEntryId ? "Update Item" : "Add Item"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
