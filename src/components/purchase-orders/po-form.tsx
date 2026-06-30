@@ -271,6 +271,8 @@ export function PurchaseOrderForm({
         const gsm = soItem.fabricBom?.gsm || "180";
         const width = soItem.fabricBom?.width || "44";
         const color = soItem.fabricBom?.color || "White";
+        const orderPcs = Object.values(soItem.sizeBreakdown || {}).reduce((a: any, b: any) => a + b, 0) as number;
+        const consumptionAvg = 1.35;
         
         newItems.push({
           id: "item-" + Math.random().toString(36).substr(2, 9),
@@ -280,7 +282,9 @@ export function PurchaseOrderForm({
           gsmContent: `${gsm}gsm`,
           width: `${width}"`,
           colorShade: color,
-          requiredQty: baseQty,
+          orderPcs: orderPcs,
+          consumptionAvg: consumptionAvg,
+          requiredQty: orderPcs * consumptionAvg,
           qty: 0,
           buffer: 0,
           uom: "mtr",
@@ -384,6 +388,14 @@ export function PurchaseOrderForm({
   const handleWidthChange = (itemId: string, newWidth: string) => {
     setPoItems(poItems.map(item => 
       item.id === itemId ? { ...item, width: newWidth } : item
+    ));
+  };
+
+  const handleAvgChange = (itemId: string, newAvg: number) => {
+    setPoItems(poItems.map(item => 
+      item.id === itemId 
+        ? { ...item, consumptionAvg: newAvg, requiredQty: (item.orderPcs || 0) * newAvg } 
+        : item
     ));
   };
 
@@ -686,6 +698,7 @@ export function PurchaseOrderForm({
                 onDateChange={handleDateChange}
                 onColorChange={handleColorChange}
                 onGsmChange={handleGsmChange}
+                onAvgChange={handleAvgChange}
                 onWidthChange={handleWidthChange}
                 onImageChange={handleImageChange}
                 totalQtyDisplay={totalQtyDisplay}

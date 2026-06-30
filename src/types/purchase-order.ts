@@ -7,6 +7,8 @@ export interface POItem {
   width?: string;
   colorShade: string; // Color/Shade or variation
   requiredQty?: number;
+  orderPcs?: number;
+  consumptionAvg?: number;
   buffer?: number;
   qty: number;
   uom: string;
