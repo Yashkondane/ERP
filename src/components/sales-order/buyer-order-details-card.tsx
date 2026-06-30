@@ -8,7 +8,8 @@ import { Edit2 } from "lucide-react";
 import Link from "next/link";
 import { MOCK_BUYERS } from "@/data/mock-sales-order";
 import { format, differenceInDays } from "date-fns";
-
+import { useState } from "react";
+import { BuyerDialog } from "@/components/masters/buyer-dialog";
 export function BuyerOrderDetailsCard({ 
   isReadOnly = false, 
   isEditMode = false,
@@ -20,6 +21,7 @@ export function BuyerOrderDetailsCard({
   isSectionLocked?: boolean,
   onToggleEdit?: () => void
 }) {
+  const [isBuyerDialogOpen, setIsBuyerDialogOpen] = useState(false);
   const { register, watch, setValue, getValues, control } = useFormContext<SalesOrder>();
   const buyerId = useWatch({ control, name: "buyerId" });
   const poDate = watch("poDate");
@@ -74,7 +76,13 @@ export function BuyerOrderDetailsCard({
               control={control}
               name="buyerId"
               render={({ field }) => (
-                <Select value={field.value || undefined} onValueChange={field.onChange}>
+                <Select value={field.value || undefined} onValueChange={(val) => {
+                  if (val === "add_new_buyer") {
+                    setIsBuyerDialogOpen(true);
+                    return;
+                  }
+                  field.onChange(val);
+                }}>
                   <SelectTrigger id="buyerId" className="w-full h-[42px]">
                     <SelectValue className="truncate" placeholder="Select Buyer" />
                   </SelectTrigger>
@@ -82,6 +90,10 @@ export function BuyerOrderDetailsCard({
                     {MOCK_BUYERS.map(buyer => (
                       <SelectItem key={buyer.id} value={buyer.id}>{buyer.name}</SelectItem>
                     ))}
+                    <div className="h-px bg-slate-100 my-1" />
+                    <SelectItem value="add_new_buyer" className="text-blue-600 font-medium focus:text-blue-700 focus:bg-blue-50 cursor-pointer">
+                      + Add Buyer
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -148,6 +160,17 @@ export function BuyerOrderDetailsCard({
           )}
         </div>
       </div>
+      
+      <BuyerDialog 
+        open={isBuyerDialogOpen} 
+        onOpenChange={setIsBuyerDialogOpen} 
+        onSave={(data) => {
+          console.log("New Buyer Data:", data);
+          // Typically you would save the new buyer to your backend or state here.
+          // For now, we just close the dialog.
+          setIsBuyerDialogOpen(false);
+        }} 
+      />
     </div>
   );
 }

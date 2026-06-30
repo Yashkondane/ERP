@@ -692,37 +692,6 @@ export function PurchaseOrderForm({
                 itemLabel={itemLabel}
                 specLabel={specLabel}
                 type={type}
-                headerContent={
-                  <div className="flex items-center text-slate-600 font-bold text-sm">
-                    <span className="ml-1">(</span>
-                    <Select 
-                      value={selectedTrimItem} 
-                      onValueChange={(newVal) => {
-                        setSelectedTrimItem(newVal);
-                      }}
-                    >
-                      <SelectTrigger className="w-auto h-auto px-1 py-0 border-none shadow-none text-slate-600 font-bold focus:ring-0 bg-transparent hover:bg-slate-100 rounded">
-                         <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                         {type === "Trims" ? (
-                           <>
-                             <SelectItem value="Button">Button</SelectItem>
-                             <SelectItem value="Label">Label</SelectItem>
-                             <SelectItem value="Hangtag">Hangtag</SelectItem>
-                           </>
-                         ) : (
-                           <>
-                             <SelectItem value="All Fabrics">All Fabrics</SelectItem>
-                             <SelectItem value="Cotton Fabric">Cotton Fabric</SelectItem>
-                             <SelectItem value="Linen">Linen</SelectItem>
-                           </>
-                         )}
-                      </SelectContent>
-                    </Select>
-                    <span>)</span>
-                  </div>
-                }
               />
             </div>
 
@@ -898,35 +867,11 @@ export function PurchaseOrderForm({
             <div className="p-6">
               <div className="grid grid-cols-2 gap-5">
                 <div className="flex flex-col gap-2">
-                  <Label className="text-xs font-bold text-slate-600">Fabric Type</Label>
-                  <Select value={manualFormData.type} onValueChange={(val) => setManualFormData({...manualFormData, type: val})}>
-                    <SelectTrigger className="w-full h-10 border-slate-200 focus:ring-[#0453B8] bg-white font-medium">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Cotton Fabric">Cotton Fabric</SelectItem>
-                      <SelectItem value="Linen">Linen</SelectItem>
-                      <SelectItem value="Polyester">Polyester</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label className="text-xs font-bold text-slate-600">Fabric Description</Label>
+                  <Label className="text-xs font-bold text-slate-600">Content</Label>
                   <Input 
-                    value={manualFormData.description}
-                    onChange={(e) => setManualFormData({...manualFormData, description: e.target.value})}
-                    placeholder="Linen Slub" 
-                    className="h-10 text-sm bg-white" 
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label className="text-xs font-bold text-slate-600">GSM / Content</Label>
-                  <Input 
-                    value={manualFormData.gsm}
-                    onChange={(e) => setManualFormData({...manualFormData, gsm: e.target.value})}
-                    placeholder="150 GSM" 
+                    value={manualFormData.type}
+                    onChange={(e) => setManualFormData({...manualFormData, type: e.target.value})}
+                    placeholder="e.g. Cotton Fabric" 
                     className="h-10 text-sm bg-white" 
                   />
                 </div>
@@ -956,18 +901,13 @@ export function PurchaseOrderForm({
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Label className="text-xs font-bold text-slate-600">GST %</Label>
-                  <Select value={manualFormData.gst} onValueChange={(val) => setManualFormData({...manualFormData, gst: val})}>
-                    <SelectTrigger className="w-full h-10 border-slate-200 focus:ring-[#0453B8] bg-white font-medium">
-                      <SelectValue placeholder="Select GST" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">0%</SelectItem>
-                      <SelectItem value="5">5%</SelectItem>
-                      <SelectItem value="12">12%</SelectItem>
-                      <SelectItem value="18">18%</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-xs font-bold text-slate-600">GSM</Label>
+                  <Input 
+                    value={manualFormData.gsm}
+                    onChange={(e) => setManualFormData({...manualFormData, gsm: e.target.value})}
+                    placeholder="e.g. 150 GSM" 
+                    className="h-10 text-sm bg-white" 
+                  />
                 </div>
 
                 <div className="flex flex-col gap-2">
@@ -990,6 +930,21 @@ export function PurchaseOrderForm({
                     placeholder="130.00" 
                     className="h-10 text-sm bg-white" 
                   />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label className="text-xs font-bold text-slate-600">GST %</Label>
+                  <Select value={manualFormData.gst} onValueChange={(val) => setManualFormData({...manualFormData, gst: val})}>
+                    <SelectTrigger className="w-full h-10 border-slate-200 focus:ring-[#0453B8] bg-white font-medium">
+                      <SelectValue placeholder="Select GST" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0%</SelectItem>
+                      <SelectItem value="5">5%</SelectItem>
+                      <SelectItem value="12">12%</SelectItem>
+                      <SelectItem value="18">18%</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex flex-col gap-2">
@@ -1047,7 +1002,7 @@ export function PurchaseOrderForm({
                         rate: Number(manualFormData.rate) || item.rate,
                         gst: Number(manualFormData.gst) || item.gst,
                         amount: (Number(manualFormData.rate) || item.rate) * (Number(manualFormData.qty) || item.qty),
-                        productName: manualFormData.description || item.productName,
+                        productName: manualFormData.type || item.productName,
                         fabricImage: manualFormData.image || item.fabricImage,
                       };
                     }
@@ -1068,7 +1023,7 @@ export function PurchaseOrderForm({
                     amount: (Number(manualFormData.rate) || 130) * (Number(manualFormData.qty) || 200),
                     deliveryDate: "",
                     images: [],
-                    productName: manualFormData.description || manualFormData.type,
+                    productName: manualFormData.type,
                     soNo: "",
                     fabricImage: manualFormData.image || "/Cotton_-_Fabric_Types_-_Brightside_1_480x480.jpg",
                   };
@@ -1078,7 +1033,7 @@ export function PurchaseOrderForm({
                 setIsManualEntryOpen(false);
                 setEditingItem(null);
                 setManualFormData({
-                  type: "Cotton Fabric", description: "", gsm: "", width: "", color: "", qty: "0", rate: "0", gst: "0", image: ""
+                  type: "", description: "", gsm: "", width: "", color: "", qty: "0", rate: "0", gst: "0", image: ""
                 });
               }} className="bg-[#0453B8] hover:bg-blue-700 text-white font-bold">
                 <Check className="w-4 h-4 mr-2" /> {editingItem ? "Save Changes" : "Add to PO"}

@@ -62,9 +62,6 @@ export function POItemsTable({
         </div>
         {!isReadOnly && (
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onOpenAddDialog} className="h-8 text-xs font-bold border-slate-200 text-slate-700">
-              <Plus className="w-4 h-4 mr-1.5" /> Add Sales Order
-            </Button>
             <Button onClick={() => onOpenManualEntry && onOpenManualEntry()} size="sm" className="bg-[#10B981] hover:bg-emerald-600 text-white font-bold h-8 text-xs border-0">
               <Plus className="w-4 h-4 mr-1.5" /> Manual Fabric
             </Button>
@@ -76,24 +73,22 @@ export function POItemsTable({
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow>
-              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2">Sr</TableHead>
-              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2">Line</TableHead>
-              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2">Image</TableHead>
+              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2 w-[5%]">Sr</TableHead>
+              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2 w-[5%]">Line</TableHead>
+              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2 w-[8%]">Image</TableHead>
               <TableHead className="text-slate-700 text-[11px] font-bold py-2.5 px-2">Fabric Details</TableHead>
-              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2 leading-tight">Required Qty<br/><span className="font-normal text-[9px] text-slate-500">(Mtrs)</span></TableHead>
-              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2 leading-tight">Already Ordered<br/><span className="font-normal text-[9px] text-slate-500">(Mtrs)</span></TableHead>
-              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2 leading-tight">Balance Qty<br/><span className="font-normal text-[9px] text-slate-500">(Mtrs)</span></TableHead>
-              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2 leading-tight">PO Qty<br/><span className="font-normal text-[9px] text-red-500">*</span></TableHead>
-              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2">Rate (₹)</TableHead>
-              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2">GST %</TableHead>
-              <TableHead className="text-slate-700 text-[11px] font-bold text-right py-2.5 px-2">Amount (₹)</TableHead>
-              {!isReadOnly && <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2">Action</TableHead>}
+
+              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2 leading-tight w-[12%]">PO Qty<br/><span className="font-normal text-[9px] text-red-500">*</span></TableHead>
+              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2 w-[10%]">Rate (₹)</TableHead>
+              <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2 w-[8%]">GST %</TableHead>
+              <TableHead className="text-slate-700 text-[11px] font-bold text-right py-2.5 px-2 w-[12%]">Amount (₹)</TableHead>
+              {!isReadOnly && <TableHead className="text-slate-700 text-[11px] font-bold text-center py-2.5 px-2 w-[8%]">Action</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody className="text-sm">
             {items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isReadOnly ? 11 : 12} className="py-8 text-center text-slate-500">
+                <TableCell colSpan={isReadOnly ? 8 : 9} className="py-8 text-center text-slate-500">
                   No {itemLabel.toLowerCase()}s added yet. {!isReadOnly && `Click "Add Sales Order" or "Manual Fabric" to start.`}
                 </TableCell>
               </TableRow>
@@ -123,7 +118,7 @@ export function POItemsTable({
                         <React.Fragment key={`group-${soNo}`}>
                           {/* Group Header */}
                           <TableRow className="bg-[#f8fafd]">
-                            <TableCell colSpan={12} className="py-2.5 px-4 text-xs font-bold text-[#0453B8]">
+                            <TableCell colSpan={9} className="py-2.5 px-4 text-xs font-bold text-[#0453B8]">
                               {soNo} - {soName}
                             </TableCell>
                           </TableRow>
@@ -147,22 +142,11 @@ export function POItemsTable({
                                 <TableCell className="py-2.5 px-2">
                                   <div className="inline-flex flex-col min-w-[150px]">
                                     <span className="font-bold text-[#0453B8] text-[12px] leading-tight mb-0.5">{item.material || "Fabrics"}</span>
-                                    <span className="text-[11px] text-slate-500 leading-tight mb-1">{item.description || "Fabric Description"}</span>
                                     <span className="text-[11px] font-bold text-slate-700 leading-tight">{(item.gsm || item.gsmContent || "180gsm").replace(" GSM", "gsm")} &nbsp; {item.width || '44"'}</span>
                                   </div>
                                 </TableCell>
 
-                                <TableCell className="text-center py-2.5 px-2 text-xs font-bold text-slate-700">
-                                  {reqQty.toFixed(2)}
-                                </TableCell>
 
-                                <TableCell className="text-center py-2.5 px-2 text-xs font-bold text-emerald-600">
-                                  {alreadyOrdered.toFixed(2)}
-                                </TableCell>
-
-                                <TableCell className="text-center py-2.5 px-2 text-xs font-bold text-[#0453B8]">
-                                  {balance.toFixed(2)}
-                                </TableCell>
 
                                 <TableCell className="text-center py-2.5 px-2">
                                   <button 
@@ -203,7 +187,7 @@ export function POItemsTable({
                     {manualGroup.length > 0 && (
                       <React.Fragment key="group-MANUAL">
                         <TableRow className="bg-[#f0fdf4]">
-                          <TableCell colSpan={12} className="py-2.5 px-4 text-[11px] font-bold text-emerald-700 uppercase tracking-wide">
+                          <TableCell colSpan={9} className="py-2.5 px-4 text-[11px] font-bold text-emerald-700 uppercase tracking-wide">
                             Manual Entry
                           </TableCell>
                         </TableRow>
@@ -221,14 +205,11 @@ export function POItemsTable({
                             <TableCell className="py-2.5 px-2">
                                   <div className="inline-flex flex-col min-w-[150px]">
                                     <span className="font-bold text-[#0453B8] text-[12px] leading-tight mb-0.5">{item.material || "Fabrics"}</span>
-                                    <span className="text-[11px] text-slate-500 leading-tight mb-1">{item.description || "Fabric Description"}</span>
                                     <span className="text-[11px] font-bold text-slate-700 leading-tight">{(item.gsm || item.gsmContent || "150gsm").replace(" GSM", "gsm")} &nbsp; {item.width || '54"'}</span>
                                   </div>
                                 </TableCell>
 
-                            <TableCell className="text-center py-2.5 px-2 text-slate-400 font-bold">-</TableCell>
-                            <TableCell className="text-center py-2.5 px-2 text-slate-400 font-bold">-</TableCell>
-                            <TableCell className="text-center py-2.5 px-2 text-slate-400 font-bold">-</TableCell>
+
 
                             <TableCell className="text-center py-2.5 px-2">
                                 <button 

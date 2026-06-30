@@ -141,21 +141,32 @@ export function SalesOrderForm({ initialValues, isReadOnly = false, isEditMode =
             <div className="w-full xl:w-[320px] flex flex-col gap-5 flex-shrink-0">
               {/* SO Number/Date Badges */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col bg-white border border-blue-200/60 rounded-xl p-3 shadow-sm text-center justify-center">
+                <div className="flex flex-col bg-white border border-blue-200/60 rounded-xl p-3 shadow-sm text-center justify-center h-full min-h-[105px]">
                   <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1">SO NUMBER</span>
-                  <span className="text-base font-black text-[#0453B8] tracking-wide">
-                    {methods.getValues("salesOrderNo")}
-                  </span>
-                  <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5 invisible">
-                    SPACER
-                  </span>
+                  {(() => {
+                    const soNo = methods.getValues("salesOrderNo") || "";
+                    const parts = soNo.split("-");
+                    if (parts.length === 3) {
+                      return (
+                        <div className="flex flex-col items-center mt-1">
+                          <span className="text-sm font-extrabold text-[#0453B8] uppercase tracking-widest opacity-90">{parts[0]} {parts[1]}</span>
+                          <span className="text-4xl leading-none font-black text-[#0453B8] tracking-tight mt-1.5">{parts[2]}</span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <span className="text-base font-black text-[#0453B8] tracking-wide">
+                        {soNo}
+                      </span>
+                    );
+                  })()}
                 </div>
-                <div className="flex flex-col bg-white border border-blue-200/60 rounded-xl p-3 shadow-sm text-center justify-center">
+                <div className="flex flex-col bg-white border border-blue-200/60 rounded-xl p-3 shadow-sm text-center justify-center h-full min-h-[105px]">
                   <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1">SO DATE</span>
-                  <span className="text-base font-black text-[#0453B8] tracking-wide">
+                  <span className="text-[17px] font-black text-[#0453B8] tracking-wide mt-1">
                     {methods.getValues("orderDate") ? format(methods.getValues("orderDate"), "dd-MMM-yyyy").toUpperCase() : "N/A"}
                   </span>
-                  <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider mt-0.5">
+                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mt-1.5">
                     {methods.getValues("orderDate") ? format(methods.getValues("orderDate"), "EEEE").toUpperCase() : ""}
                   </span>
                 </div>
